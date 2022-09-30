@@ -1,0 +1,41 @@
+# configuration file for SLAM data
+
+# BAM files
+samples:
+ 161634_WTA_0h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161634_WTA_0h.sortdedup.bam
+ 161637_WTA_1h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161637_WTA_1h.sortdedup.bam
+ 161639_WTA_2h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161639_WTA_2h.sortdedup.bam
+ 161641_WTA_4h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161641_WTA_4h.sortdedup.bam
+ 161643_WTA_6h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161643_WTA_6h.sortdedup.bam
+ 161645_WTA_8h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161645_WTA_8h.sortdedup.bam
+ 161647_WTA_16h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161647_WTA_16h.sortdedup.bam
+ 161649_WTB_0h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161649_WTB_0h.sortdedup.bam
+ 161651_WTB_1h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161651_WTB_1h.sortdedup.bam
+ 161653_WTB_2h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161653_WTB_2h.sortdedup.bam
+ 161655_WTB_4h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161655_WTB_4h.sortdedup.bam
+ 161657_WTB_6h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161657_WTB_6h.sortdedup.bam
+ 161659_WTB_8h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161659_WTB_8h.sortdedup.bam
+ 161661_WTB_16h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161661_WTB_16h.sortdedup.bam
+ 161663_WTC_0h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161663_WTC_0h.sortdedup.bam
+ 161665_WTC_1h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161665_WTC_1h.sortdedup.bam
+ 161667_WTC_2h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161667_WTC_2h.sortdedup.bam
+ 161669_WTC_4h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161669_WTC_4h.sortdedup.bam
+ 161671_WTC_6h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161671_WTC_6h.sortdedup.bam
+ 161673_WTC_8h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161673_WTC_8h.sortdedup.bam
+ 161675_WTC_16h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161675_WTC_16h.sortdedup.bam
+
+# TODO RESLOC
+# TODO add all specific options trim, etc. note that some defaults are taken from config here by wrapper script, but otherwise
+# only passed as args to splbam! --?> --trim5p 5 --trim3p 5 RUN_OPTS and VCF options?
+parent: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/pulseRT
+
+# we don't need these now
+# output directory
+#mapping: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/pulseRTc/workflow/mapping
+# output mismatch information
+#mismatch: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/pulseRTc/workflow/mismatches
+
+# SNPs file - ideally this file contains SNPs found on the set of all samples listed above
+# we currently use the snpdata from GRAND-SLAM (default format - Location\tCoverage\tMismatches\tP value)
+# comment out to run the pipeline without removing SNPs
+snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/grand-slam/results/all/all.snpdata

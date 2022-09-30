@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#SBATCH -J "bcftools"
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH -c 24
+#SBATCH --mem=50G
+
+# Usage: 
+#       callsnps SAMPLELIST DIRLOC OUTPUT INDEXLOC FASTA NUMCPUS
+
+# This script calls SNPs using BCFtools
+
+if [[ $# -ne 3 ]]; then
+  echo "Usage: $0 [SAMPLELIST] [DIRLOC] [OUTPUT] [INDEXLOC] [FASTA] [NUMCPUS]"
+  exit
+fi
+
+
+DIRLOC=$2
+OUTPUT=$3
+INDEXLOC=$3
+FASTA=$4
+BAMLIST="${OUTPUT}/${NAME}.bamlist"
+
+if [ ! -d "${DIRLOC}" ]; then
+ mkdir -p "${DIRLOC}"
+fi
+cd "$DIRLOC"
+if [ ! -f "$FASTA" ]; then
+ ln -s "${INDEXLOC}/${FASTA}" "$FASTA"
+fi
+
+# TODO: create bamlist there from original location using samplelist?
+
+bcftools mpileup -Ou --threads 24 -d 800 -f ../index/GRCh38_85_plus_Spikes_Isabel.fa -b tuc.bamlist | bcftools call -mv -Ob -o bcfs/tuc.bcf && bcftools view -m2 -M2 --types snps -e'QUAL<40' bcfs/tuc.bcf -Ov -o bcfs/tuccalls.vcf
+

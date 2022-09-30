@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+#SBATCH -J "grand-slam"
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH -c 1
+#SBATCH --mem=20G
+
+# Usage: 
+#       rungs GEDI DIRLOC INDEX NAME NUMCPUS SLOPTS GSOPTS  
+
+# Run GRAND-SLAM
+
+if [[ $# -ne 6 ]]; then
+  echo "Usage: $0 [GEDI] [DIRLOC] [INDEX] [NAME] [NUMCPUS] [GSOPTS]"
+  exit
+fi
+
+module load java/1.8.0_181
+
+GEDI=$1
+DIRLOC=$2
+INDEX=$3
+TIMEPTS=$4
+NUMCPUS=$5
+GSOPTS=$6
+
+NOW=$(date --utc +%y%m%d.%H%M%SZ)
+
+cd $DIRLOC
+PREFIX="${DIRLOC}/${TIMEPTS}/${TIMEPTS}"
+READS="${DIRLOC}/${TIMEPTS}.bamlist"
+LOG="${DIRLOC}/${TIMEPTS}/${TIMEPTS}.${NOW}.log"
+JOBNAME="gs-sl-${TIMEPTS}"
+cat > ${JOBNAME} << EOF
+#!/bin/bash
+#SBATCH -J "${JOBNAME}"
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH -c ${NUMCPUS}
+#SBATCH --mem=80G
+#SBATCH --mail-user=boileau@uni-heidelberg.de 
+#SBATCH --mail-type=FAIL,TIME_LIMIT
+#SBATCH --output=$LOG
+
+$GEDI -e Slam -genomic $INDEX $GSOPTS -nthreads $NUMCPUS -prefix $PREFIX -reads $READS 
+EOF
+sbatch ${JOBNAME}

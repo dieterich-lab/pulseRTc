@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Usage: 
+#       markdups SAMPLELIST DIRLOC TMPDIR
+
+# This script calls MarkDuplicates (Picard) and index BAM files
+# in DIRLOC, and write them again to DIRLOC
+
+if [[ $# -ne 3 ]]; then
+  echo "Usage: $0 [SAMPLELIST] [DIRLOC] [TMPDIR]"
+  exit
+fi
+
+# cannot pipe samtools sort to MarkDuplicates as it uses multiple pass...
+PICARD=/biosw/picard-tools/2.5.0/picard.jar
+RMDUPS=true
+
+files=($2/*)
+OUTPUT="$2"
+while IFS=" " read -r sample name
+ do
+   FILEN=$(printf '%s\n' "${files[@]}" | grep $sample | grep -v ".bai")
+   NAME="${OUTPUT}/${sample}_${name}.sortdedup"
+   echo "Processing ${FILEN}..."
+   java -jar ${PICARD} MarkDuplicates \
+        I=${FILEN} \
+	O="${NAME}.bam" \
+	M="${NAME}.info" \
+	REMOVE_DUPLICATES=${RMDUPS} \
+	TMP_DIR="$3" \
+	CREATE_INDEX=true
+ done < "$1"
+ 
+echo "Done!"

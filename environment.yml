@@ -1,0 +1,25 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # python
+  - python=3.10.5
+  - pysam=0.19.1
+  - numpy
+  - pandas
+  - joblib
+  - pyyaml
+  - pip
+  - setuptools
+  # dependencies
+  - samtools=1.15.1
+  #- salmon=1.9 # CONFLICT installs 0.14.2!
+  - subread=2.0.1
+  - bcftools=1.15.1
+  # R
+  - r-base=4.2.1
+  - r-devtools
+  - r-tidyverse
+  - r-cowplot
+  - r-gridextra

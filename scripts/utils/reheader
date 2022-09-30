@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Usage: 
+#       reheader DIRLOC
+
+# Custom script: re-header BAM files in DIRLOC
+# Temporarily copies the whole directory...
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 [DIRLOC]"
+  exit
+fi
+
+# There are no alignments to either SIRVomeERCCome or NMD_reporter, so we just reheader the files
+# to use standard annotation/fasta - we want to avoid defining a "new location", so just copy
+# the files, re-header, and delete all previous data.
+
+TMP="$1_copy"
+cp -r "$1" "$TMP"
+rm "$1/*"
+
+for file in $TMP/*sortdedup.bam; do samtools view -H $file | grep -vE "SIRVomeERCCome|NMD_reporter" > ${file%.*}-header.txt && samtools reheader ${file%.*}-header.txt $file > $1/$(basename "${file%.*}").bam; done && for file in $1/*.bam; do samtools index -@24 $file; done 
+
+rm -r $TMP

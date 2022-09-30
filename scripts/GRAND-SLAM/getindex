@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#SBATCH -J "GSidx"
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH -c 1
+#SBATCH --mem=40G
+
+# Usage: 
+# 	getindex GEDI GSLOC INDEXLOC FASTA GTF NAME
+
+# Create GRAND-SLAM index in GSLOC using FASTA and GTF located in INDEXLOC
+# index saved under ~/.gedi/genomic/${NAME}.oml
+
+if [[ $# -ne 6 ]]; then
+  echo "Usage: $0 [GEDI] [GSLOC] [INDEXLOC] [FASTA] [GTF] [NAME]"
+  exit
+fi
+
+module load java/1.8.0_181
+
+GEDI=$1
+GSLOC=$2
+INDEXLOC=$3
+FASTA=$4
+GTF=$5
+NAME=$6
+
+# fasta and gtf must be symlinked here
+cd "$GSLOC"
+if [ ! -f "$FASTA" ]; then
+ ln -s "${INDEXLOC}/${FASTA}" "$FASTA"
+fi
+if [ ! -f "$GTF" ]; then
+ ln -s "${INDEXLOC}/${GTF}" "$GTF"
+fi
+# create index
+"$GEDI" -e IndexGenome -s "$FASTA" -a "$GTF" -n "$NAME" -nokallisto -nobowtie -nostar -D
