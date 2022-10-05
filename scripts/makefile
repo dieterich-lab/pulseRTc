@@ -25,57 +25,64 @@ get-headers:
 # create GRAND-SLAM index
 SRC=GRAND-SLAM
 get-gs-index:
-	sbatch $(SRC)/getindex $(GEDI) $(INDEXLOC_GS) $(INDEXLOC) $(FASTA) $(GTF) $(INDEX_GS)
+	sbatch $(SRC)/getindex $(GEDI) $(INDEXLOC_GS) $(INDEXLOC) $(FASTA) $(GTF) $(INDEX_GS) > $(LOGS)/$@.$(NOW).log 2>&1 &
 # link BAM files to GRAND-SLAM results directory
 get-bam-list:
-	bash $(SRC)/linkbams $(SAMPLELIST) $(BAMLOC_1) $(BAMLOC_GS) $(OUTPUT_GS)
+	bash $(SRC)/linkbams $(SAMPLELIST) $(BAMLOC_1) $(BAMLOC_GS) $(OUTPUT_GS) > $(LOGS)/$@.$(NOW).log 2>&1 &
 # submit job
 run-gs:
-	sbatch $(SRC)/rungs $(GEDI) $(BAMLOC_GS) $(INDEX_GS) $(OUTPUT_GS) $(NUM_CPUS) $(GSOPTS)
-	
-	
-# TODO run bcftools
-	
-	
-# workflow ---
-# TODO dealwith RUN_OPTS to config
-CFG=run
+	sbatch $(SRC)/rungs $(GEDI) $(BAMLOC_GS) $(INDEX_GS) $(OUTPUT_GS) $(NUM_CPUS) $(GSOPTS) > $(LOGS)/$@.$(NOW).log 2>&1 &
+
+
+# run BFCtools ---
+# optional
+
+# run BCFtools
+SRC=utils
+run-bcftools:
+	$(MKCMDBASH) callsnps $(SAMPLELIST) $(BAMLOC_1) $(BCFLOC) $(OUTPUT_BCF) $(INDEXLOC) $(FASTA) $(NUM_CPUS) > $(LOGS)/$@.$(NOW).log 2>&1 &
+
+
+# workflow (prep BAM files) ---
+
+# run splbam for all samples in config
 run-workflow:
-	$(MKCMDPYTHON) run $(CFG)/config.yaml $(RUN_OPTS) --trim5p 5 --trim3p 5 $(ALL_OPTS) --log-file $(LOGS)/$@.$(NOW).out &
-	
-# plot mismatch details 
+	$(MKCMDPYTHON) run-all-splbam $(YML) $(RUN_OPTS) $(ALL_OPTS) --log-file $(LOGS)/$@.$(NOW).out &
+
+# plot mismatch details
+SRC=R/analysis
 plot-mm:
-	$(MKCMDR) workflow/mismatches/plot_mismatches.R default > $(LOGS)/$@.$(NOW).out 2>&1 &
-	
+	$(MKCMDR) $(SRC)/plot_mismatches.R $(RESLOC) > $(LOGS)/$@.$(NOW).out 2>&1 &
+
 # read counting - featureCounts
 # make count-fc
 fc=$(BAMLOC_1)/*.bam
-RES=$(RESLOC)/tables/$*$(OUTPUT_NAME)
+RES=$(RESLOC)/tables/$*$(OUTPUT_FC)
 count-%:
 	$(MKCMDBASH) featureCounts -t exon -s 2 -p -B -C -M --fraction --ignoreDup -T $(NUM_CPUS) --tmpDir $(TMPDIR) -a $(INDEXLOC)/$(GTF) -o $(RES) $($*) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
-	
-	
 
 
-
-	
 	
 	
 # pulseR ---
 
-PSRC=pulser
-PLOG=pulser/logs
-prep:
-	${MKCMDR} $(PSRC)/prep.R > $(PLOG)/$@.$(NOW).log 2>&1 &
+SRC=R/pulser
+# prepare pulseR input from featureCounts tables
+prep-fc:
+	${MKCMDR} $(SRC)/prep_fc.R $(RESLOC) $(RESLOC_PULSER) $(OUTPUT_FC) > $(LOGS)/$@.$(NOW).log 2>&1 &
 	
+	
+fc=$(RESLOC_PULSER)/featureCounts
+salmon=$(RESLOC_PULSER)/salmon
 # all time points
-pulse-all:
-	${MKCMDRLONG} $(PSRC)/fit_rtc.R all > $(PLOG)/$@.$(NOW).out 2>&1 &
-# subset of time points - 3
-pulse-all-sets-1:
-	${MKCMDRLONG} $(PSRC)/fit_rtc.R all 1 > $(PLOG)/$@.$(NOW).out 2>&1 &
-# subset of time points - 4
-pulse-all-sets-2:
-	${MKCMDRLONG} $(PSRC)/fit_rtc.R all 2 > $(PLOG)/$@.$(NOW).out 2>&1 &	
+# make pulse-all-fc or pulse-all-salmon 
+pulse-all-%:
+	${MKCMDRLONG} $(SRC)/fit_rtc.R $(SRC) $($*) > $(LOGS)/$@.$(NOW).out 2>&1 &
+# subset of time points
+# make pulse-set-fc or pulse-set-salmon 
+pulse-set-%:
+	${MKCMDRLONG} $(SRC)/fit_rtc.R $(SRC) $($*) 1 > $(LOGS)/$@.$(NOW).out 2>&1 &	
+	
+
 

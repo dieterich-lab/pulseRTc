@@ -11,10 +11,15 @@ if [[ $# -ne 4 ]]; then
   exit
 fi
 
+# location of BAM files
 DIRLOC=$2
+# GRAND-SLAM parent output directory
 OUTPUT=$3
+# output name (and results directory - created if does not exists)
 NAME=$4
+# bamlist - created
 BAMLIST="${OUTPUT}/${NAME}.bamlist"
+
 FILES=($DIRLOC/*)
 
 if [ ! -d "${OUTPUT}/${NAME}" ]; then

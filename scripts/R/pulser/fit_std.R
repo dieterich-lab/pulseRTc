@@ -1,5 +1,7 @@
 #! /usr/bin/env Rscript
 
+# TODO: update 05.10.22
+
 # Usage: ./fit_std.R <0/1> <0/1>
 # <0/1>: 0 = fit (default), 1 = use ERCC spike-ins
 # <0/1>: 0 = all time points (default), 1 = subset of time points

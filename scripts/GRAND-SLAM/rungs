@@ -18,11 +18,17 @@ fi
 
 module load java/1.8.0_181
 
+# executable
 GEDI=$1
+# parent output directory
 DIRLOC=$2
+# GRAND-SLAM index name
 INDEX=$3
+# output name
 TIMEPTS=$4
+# number of CPUs
 NUMCPUS=$5
+# GRAND-SLAM options
 GSOPTS=$6
 
 NOW=$(date --utc +%y%m%d.%H%M%SZ)

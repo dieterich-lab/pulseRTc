@@ -85,26 +85,6 @@ makePD <- function(counts, conditions, formulas, norms=NULL, spikes=NULL) {
 }
 
 
-##' Fitting sets
-# for RTC data
-timeSets3 <- list(
-  c(0, 1, 2),
-  c(0, 2, 4),
-  c(0, 4, 6),
-  c(0, 6, 8),
-  c(0, 8, 16)
-)
-# for standard
-timeSets4 <- list(
-  c(0, 1, 2, 4, 6),
-  c(0, 2, 4, 6, 8),
-  c(0, 4, 6, 8, 16)
-)
-allSets <- list(
-  c(0, 1, 2, 4, 6, 8, 16)
-)
-
-
 ##' a helper to read fit results and to make a result table.
 ##' returns a list with
 ##'     result$pd  - PulseData object

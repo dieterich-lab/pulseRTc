@@ -1,6 +1,6 @@
-# configuration file for SLAM data
+# configuration file 
 
-# BAM files
+# BAM files - ready for input
 samples:
  161634_WTA_0h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161634_WTA_0h.sortdedup.bam
  161637_WTA_1h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161637_WTA_1h.sortdedup.bam
@@ -24,18 +24,30 @@ samples:
  161673_WTC_8h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161673_WTC_8h.sortdedup.bam
  161675_WTC_16h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161675_WTC_16h.sortdedup.bam
 
-# TODO RESLOC
-# TODO add all specific options trim, etc. note that some defaults are taken from config here by wrapper script, but otherwise
-# only passed as args to splbam! --?> --trim5p 5 --trim3p 5 RUN_OPTS and VCF options?
-parent: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/pulseRT
-
-# we don't need these now
-# output directory
-#mapping: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/pulseRTc/workflow/mapping
-# output mismatch information
-#mismatch: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/pulseRTc/workflow/mismatches
+# parent output directory - created if does not exists
+# subdirectories "mapping", "mismatches", and "tables" are created
+parent: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/pulseRT/workflow
 
 # SNPs file - ideally this file contains SNPs found on the set of all samples listed above
 # we currently use the snpdata from GRAND-SLAM (default format - Location\tCoverage\tMismatches\tP value)
 # comment out to run the pipeline without removing SNPs
+# if using BCFtools, don't forget to use the [--vcf] option (set vfc to True)!
 snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/grand-slam/results/all/all.snpdata
+
+# program options - if unspecified uses default in splbam
+base_qual: 20 # default 20
+trim5p: 5 # default 0
+trim3p: 5 # default 0
+vcf: False # default False
+ref_base: T # default T
+base_change: C # default C
+
+# pulseR output directory - created if does not exists
+# subdirectories "featureCounts" and "salmon" are created where necessary
+pulsedir: 
+
+
+
+
+
+

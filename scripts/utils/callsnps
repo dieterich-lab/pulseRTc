@@ -7,21 +7,29 @@
 #SBATCH --mem=50G
 
 # Usage: 
-#       callsnps SAMPLELIST DIRLOC OUTPUT INDEXLOC FASTA NUMCPUS
+#       callsnps SAMPLELIST BAMLOC DIRLOC OUTPUT INDEXLOC FASTA NUMCPUS
 
 # This script calls SNPs using BCFtools
 
 if [[ $# -ne 3 ]]; then
-  echo "Usage: $0 [SAMPLELIST] [DIRLOC] [OUTPUT] [INDEXLOC] [FASTA] [NUMCPUS]"
+  echo "Usage: $0 [SAMPLELIST] [BAMLOC] [DIRLOC] [OUTPUT] [INDEXLOC] [FASTA] [NUMCPUS]"
   exit
 fi
 
-
-DIRLOC=$2
-OUTPUT=$3
-INDEXLOC=$3
-FASTA=$4
-BAMLIST="${OUTPUT}/${NAME}.bamlist"
+# location of BAM files
+BAMLOC=$2
+# BCFtools directory - created if does not exists
+DIRLOC=$3
+# output name
+OUTPUT=$4
+# location of index (gtf/fasta)
+INDEXLOC=$5
+# name of fasta file
+FASTA=$6
+# number of CPUs
+NUMCPUS=$7
+# bamlist - created
+BAMLIST="${OUTPUT}.bamlist"
 
 if [ ! -d "${DIRLOC}" ]; then
  mkdir -p "${DIRLOC}"
@@ -31,7 +39,13 @@ if [ ! -f "$FASTA" ]; then
  ln -s "${INDEXLOC}/${FASTA}" "$FASTA"
 fi
 
-# TODO: create bamlist there from original location using samplelist?
+# bamlist
+FILES=($BAMLOC/*)
+while IFS=" " read -r sample name
+ do
+  FILEN=$(printf '%s\n' "${FILES[@]}" | grep $sample | grep "sortdedup.bam$")
+  echo "$NAME" >> "$BAMLIST"
+ done < "$1"
 
-bcftools mpileup -Ou --threads 24 -d 800 -f ../index/GRCh38_85_plus_Spikes_Isabel.fa -b tuc.bamlist | bcftools call -mv -Ob -o bcfs/tuc.bcf && bcftools view -m2 -M2 --types snps -e'QUAL<40' bcfs/tuc.bcf -Ov -o bcfs/tuccalls.vcf
+bcftools mpileup -Ou --threads ${NUMCPUS} -d 800 -f ${FASTA} -b ${BAMLIST} | bcftools call -mv -Ob -o "${OUTPUT}.bcf" && bcftools view -m2 -M2 --types snps -e'QUAL<40' "${OUTPUT}.bcf" -Ov -o "${OUTPUT}.snps.vcf"
 

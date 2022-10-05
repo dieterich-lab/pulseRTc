@@ -1,6 +1,8 @@
 #! /usr/bin/env Rscript
 
-# Usage: ./fit_rtc.R [slam/tuc/tls] <0/1>
+# Usage: ./fit_rtc.R [SRC] [LOC] <0/1>
+# [SRC] Source scripts
+# [LOC] pulseR input/output directory
 # <0/1>: 0 = all time points (default), 1 = subset of time points
 
 library(pulseR)
@@ -14,37 +16,29 @@ library(dplyr)
 ## conversion data: SLAM, TUC, TLS.
 ## pulseR_1.0.3
 
-loc <- here::here("pulseRTc", "pulser")
-
-source(file.path(loc, "utils.R", fsep=.Platform$file.sep)) 
-source(file.path(loc, "models.R", fsep=.Platform$file.sep))
-
 ## local options
 expressionThreshold <- 50
-
 
 ## input/output: all paths are relative to this directory
 
 args <- commandArgs(trailingOnly=TRUE)
-if (length(args)<1) { stop("./fit_rtc.R [slam/tuc/tls] <0/1>\n", call.=FALSE) }
-whichData <- tolower(args[1])
+if (length(args)<3) { stop("./fit_rtc.R [SRC] [LOC] <0/1>\n", call.=FALSE) }
+
+src <- args[1]
+source(file.path(src, "time_pts.R", fsep=.Platform$file.sep))
+source(file.path(src, "utils.R", fsep=.Platform$file.sep)) 
+source(file.path(src, "models.R", fsep=.Platform$file.sep))
 
 use_fit <- FALSE
 usedSets <- allSets
 modelStr <- "pulse"
-if (length(args)>1 & as.integer(args[2])==1) { 
-    usedSets <- timeSets3
-    use_fit <- TRUE
-}
-if (length(args)>1 & as.integer(args[2])==2) { 
-    usedSets <- timeSets4
+if (length(args)>2 & as.integer(args[3])==1) { 
+    print("Using subsets of time points defined in time_pts.R")
+    usedSets <- timeSets
     use_fit <- TRUE
 }
 
-
-prefix <- '../results'
-# rdsDir <- file.path(loc, prefix, whichData, fsep=.Platform$file.sep)
-rdsDir <- file.path(loc, prefix, fsep=.Platform$file.sep)
+rdsDir <- args[2]
 print(paste("Fitting ", rdsDir, " ...", sep=""))
 
 ## data

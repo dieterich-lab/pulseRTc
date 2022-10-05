@@ -19,14 +19,23 @@ fi
 
 module load java/1.8.0_181
 
+# executable
 GEDI=$1
+# GRAND-SLAM index directory - created if does not exists
 GSLOC=$2
+# location of index files (gtf/fasta)
 INDEXLOC=$3
+# name of fasta file
 FASTA=$4
+# name of gtf file
 GTF=$5
+# output name (GRAND-SLAM index)
 NAME=$6
 
 # fasta and gtf must be symlinked here
+if [ ! -d "${GSLOC}" ]; then
+ mkdir -p "${GSLOC}"
+fi
 cd "$GSLOC"
 if [ ! -f "$FASTA" ]; then
  ln -s "${INDEXLOC}/${FASTA}" "$FASTA"
