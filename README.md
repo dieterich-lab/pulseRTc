@@ -64,5 +64,31 @@ pip --verbose install [-e] . 2<&1 | tee install.log
 Running **pulseRTc**
 ====================
 
+The workflow is made up of different parts which may or may not all be run sequentially. To get started, we `cd scripts`, and set all paths, variables, and program options in *makefile.vars*. None of these paths is required to be located in this repository, *i.e.* they can be anywhere, as long as they are accessible. Most of them are self-explanatory, *e.g* `INDEXLOC` is the path to your `FASTA` and `GTF` files, *etc.* You also need to define which commands `MKCMD` are used to call programs, *i.e.* whether you use Slurm, or simply bash, *etc.*
+
+Under *pulseRTc/data*, we also provide examples of *SAMPLELIST.TXT* and *config.yaml* that are defined using variables `SAMPLELIST` and `YML`, respectively. `DATALOC` is the location where these files reside.
+
+If your BAM files are ready to be processed, the first step is to either run **GRAND-SLAM** or **BCFtools** to get SNPs. If you BAM files are not sorted/indexed, you can try the pre-processing steps `make get-sorted-bams`.
+
+> **Warning**\
+> Pre-processing scripts such as `sortnrename` need to be modified, and in most cases will not run successfully on your files!
+
+> **Warning**\
+> BAM files require the MD tag! If they do not, you can try `samtools calmd file.sorted.bam reference.fasta > file.md.sorted.bam` where the reference fasta must be the same as the one used for mapping.
+
+In general, removing duplicate ( *e.g* due to PCR artefacts) might help to reduce number of false positives for variant calling. We remove duplicate with a custom script using `make get-dedups`.
+
+But suppose that our BAM files are ready, and that we want to get SNPs using **BCFtools**. We need to make sure `BCFLOC` and `OUTPUT_BCF` are set, and `make run-bcftools`. The final location of your BAM files is defined in the *config.yaml* using the `bamloc` key. This is automatically picked-up by *makefile.vars*. *SAMPLELIST.TXT* is a two column space-separated file with sample id and name that is used to faciliate pre-processing, but you don't need it if you already have a list of paths to your BAM files, one per line, in a file called `OUTPUT_BCF.bamlist` under the directory specified by `BCFLOC` (where you replace `OUTPUT_BCF` with the value set in *makefile.vars* ).
+
+Once this is one, you need to update the `snpdata` key in the *config.yaml* with the output of **BCFtools**, and set `vcf: True`. You need to set `parent` and any program options, and `make run-workflow`. After completion, you can get some summary statistics using `make plot-mm`.
+
+We are now ready to proceed to read abundance quantification, as **pulseR** needs read counts as input. If we are interested in gene read counts, then we can use **featureCounts**.
+
+
+
+
+
+
+
 
 

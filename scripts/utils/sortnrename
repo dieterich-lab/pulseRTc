@@ -62,7 +62,7 @@ while IFS=" " read -r sample name
       idx1="$(cut -d'_' -f6 <<<$f)"
       NAME="$3/${sample}_${name}_${idx1}.bam"
       echo "Written sorted file to ${NAME} with RG tag..."
-      samtools sort "${f}/Aligned.noS.bam" -@24 -T "$4/${name}_${idx}" | samtools addreplacerg - -r ID:"${sample}_${idx1}" -r SM:"${sample}" -r PL:Illumina LB:"${sample}_${idx1}" -@24 | samtools view - -b -o ${NAME}
+      samtools sort "${f}/Aligned.noS.bam" -@24 -T "$4/${name}_${idx1}" | samtools addreplacerg - -r ID:"${sample}_${idx1}" -r SM:"${sample}" -r PL:Illumina LB:"${sample}_${idx1}" -@24 | samtools view - -b -o ${NAME}
      done
   fi
  done < "$1"

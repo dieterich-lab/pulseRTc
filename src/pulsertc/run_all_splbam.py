@@ -90,7 +90,8 @@ def main():
 
     for name, bam in config["samples"].items():
         
-        cmd = f"splbam {bam} {Path(config["parent"], "mapping").as_posix()} " \
+        bam_path = Path(config["bamloc"], bam).as_posix()
+        cmd = f"splbam {bam_path} {Path(config["parent"], "mapping").as_posix()} " \
               f"{Path(config["parent"], "mismatches").as_posix()} {name} " \
               f"{all_opt_str} {snpdata_str} --num-cpus {args.num_cpus} {mem_str} " \
               f"{logging_str} {overwrite_str} {do_not_call_str}"
