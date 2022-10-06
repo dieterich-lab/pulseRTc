@@ -54,6 +54,9 @@ SRC=R/analysis
 plot-mm:
 	$(MKCMDR) $(SRC)/plot_mismatches.R $(RESLOC) > $(LOGS)/$@.$(NOW).out 2>&1 &
 
+
+# abundance estimation (prep count tables) ---
+
 # read counting - featureCounts
 # make count-fc
 fc=$(BAMLOC_1)/*.bam
@@ -61,8 +64,16 @@ RES=$(RESLOC)/tables/$*$(OUTPUT_FC)
 count-%:
 	$(MKCMDBASH) featureCounts -t exon -s 2 -p -B -C -M --fraction --ignoreDup -T $(NUM_CPUS) --tmpDir $(TMPDIR) -a $(INDEXLOC)/$(GTF) -o $(RES) $($*) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
+# Salmon - convert BAM files to FASTQ
+
+# Salmon - generate index ()
+
+# read counting - Salmon in alignment-based mode
 
 
+# read counting - Salmon in  
+	
+	
 	
 	
 # pulseR ---
