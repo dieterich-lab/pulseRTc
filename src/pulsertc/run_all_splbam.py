@@ -46,7 +46,8 @@ def main():
     # create output directory structure
     Path(config["parent"], "mapping").mkdir(parents=True, exist_ok=True)
     Path(config["parent"], "mismatches").mkdir(parents=True, exist_ok=True)
-    Path(config["parent"], "tables").mkdir(parents=True, exist_ok=True)
+    # if running with Salmon, this directory is created later
+    Path(config["parent"], "tables", "featureCounts").mkdir(parents=True, exist_ok=True)
     
     # handle all option strings to call splbam
     # use defaults for most options (not passed)

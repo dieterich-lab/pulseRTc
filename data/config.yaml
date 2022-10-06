@@ -25,7 +25,7 @@ samples:
  161675_WTC_16h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161675_WTC_16h.sortdedup.bam
 
 # parent output directory - created if does not exists
-# subdirectories "mapping", "mismatches", and "tables" are created
+# subdirectories "mapping" ("raw"), "mismatches", and "tables" (featureCounts and/or Salmon) are created
 parent: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/pulseRT/workflow
 
 # SNPs file - ideally this file contains SNPs found on the set of all samples listed above

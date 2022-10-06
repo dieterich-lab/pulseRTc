@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Usage: 
+# 	runsalmon SALMON LOC INDEX OPTS NUMCPUS
+
+# Convert "split" BAM files back to FASTQ
+
+if [[ $# -ne 5 ]]; then
+  echo "Usage: $0 [SALMON] [LOC] [INDEX] [OPTS] [NUMCPUS]"
+  exit
+fi
+
+# executable
+SALMON=$1
+# location of raw files (fastq)
+LOC="$2/raw"
+# output directory - created if does not exists
+OUTPUT="$2/tables/Salmon"
+# Salmon index directory 
+INDEX="$3/index"
+# Salom options
+OPTS=$4
+# cpus for indexing
+NUMCPUS=$5
+
+if [ ! -d "${OUTPUT}" ]; then
+ mkdir -p "${OUTPUT}"
+fi
+
+# prep files
+mapfile -t R1 <<< "$(ls $LOC | grep _R1.fastq.gz | sort)"
+echo "Processing ${#R1[@]} R1 FASTQ files..."
+mapfile -t R2 <<< "$(ls $LOC | grep _R2.fastq.gz | sort)" 
+echo "Processing ${#R2[@]} R2 FASTQ files..."
+# call salmon
+echo "Calling: salmon quant -i $INDEX -p $NUMCPUS ${OPTS} -1 <(gunzip -c ${R1[@]}) -2 <(gunzip -c ${R2[@]}) -o ${OUTPUT} ..."
+$SALMON quant -i $INDEX -p $NUMCPUS ${OPTS} -1 <(gunzip -c ${R1[@]}) -2 <(gunzip -c ${R2[@]}) -o ${OUTPUT}

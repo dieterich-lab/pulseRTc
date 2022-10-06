@@ -28,7 +28,7 @@ if (length(args)<3) {
 }
 
 getData <- function(data, dataDir, dataFile, outDir){
-    loc <- file.path(dataDir, "tables", fsep=.Platform$file.sep)
+    loc <- file.path(dataDir, "featureCounts", fsep=.Platform$file.sep)
     cts <- read.table(file.path(loc, dataFile, fsep=.Platform$file.sep), row.names=1, sep = "\t", header=TRUE, check.names=FALSE)
     cts <- cts %>% dplyr::select(starts_with(basename(dataDir)))
     depth <- length(strsplit(colnames(cts)[1], "/", fixed=T)[[1]])
@@ -75,4 +75,5 @@ tsv <- paste(data, args[3], sep="-")
 print(paste("Processing ", file.path(args[1], "tables", tsv, fsep=.Platform$file.sep), " ...", sep=""))
 print(paste("Writing to ", outDir, " ...", sep=""))
 
-getData(data, args[1], tsv, outDir)
+dataDir <- file.path(args[1], "tables", fsep=.Platform$file.sep)
+getData(data, dataDir, tsv, outDir)
