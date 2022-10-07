@@ -86,7 +86,8 @@ We are now ready to proceed to read abundance quantification, as **pulseR** need
 
 
 
-
+** note pulser counts
+** my local what I done
 
 
 

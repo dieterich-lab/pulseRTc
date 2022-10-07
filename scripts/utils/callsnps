@@ -11,7 +11,7 @@
 
 # This script calls SNPs using BCFtools
 
-if [[ $# -ne 3 ]]; then
+if [[ $# -ne 7 ]]; then
   echo "Usage: $0 [SAMPLELIST] [BAMLOC] [DIRLOC] [OUTPUT] [INDEXLOC] [FASTA] [NUMCPUS]"
   exit
 fi
