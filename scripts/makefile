@@ -61,7 +61,7 @@ plot-mm:
 
 # read counting - featureCounts
 # make count-fc
-fc=$(BAMLOC_1)/*.bam
+fc=$(RESLOC)/mapping/*.bam
 RES=$(RESLOC)/tables/featureCounts/$*$(OUTPUT_FC)
 count-%:
 	$(MKCMDBASH) featureCounts $(FC_OPTS) -T $(NUM_CPUS) --tmpDir $(TMPDIR) -a $(INDEXLOC)/$(GTF) -o $(RES) $($*) > $(LOGS)/$@.$(NOW).log 2>&1 &
@@ -71,17 +71,17 @@ SALMON_PATH := $(or $(SALMON_PATH),$(shell which salmon))
 GFFREAD_PATH := $(or $(GFFREAD_PATH),$(shell which gffread))
 # Salmon - generate index (if using mapping-based mode)
 get-salmon-index:
-	$(MKCMDBASH_HMEM) $(SRC_SALMON)/getindex $(SALMON_PATH) $(GFFREAD_PATH) $(INDEXLOC) $(FASTA) $(GTF) $(INDEX_SALMON) $(NUM_CPUS)
+	$(MKCMDBASH_HMEM) $(SRC_SALMON)/getindex $(SALMON_PATH) $(GFFREAD_PATH) $(INDEXLOC) $(FASTA) $(GTF) $(INDEX_SALMON) $(NUM_CPUS) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
 # Salmon - convert BAM files to FASTQ
 run-bam2fastq:
-	$(MKCMDBASH) $(SRC_SALMON)/runbam2fastq $(RESLOC) $(NUM_CPUS)
+	$(MKCMDBASH) $(SRC_SALMON)/runbam2fastq $(RESLOC) $(NUM_CPUS) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
 # TODO: read counting - Salmon in alignment-based mode
 
 # read counting - Salmon in (quasi-)mapping-based mode 
 run-salmon-qm:
-	$(MKCMDBASH) $(SRC_SALMON)/runsalmonqm $(SALMON_PATH) $(RESLOC) $(INDEX_SALMON) $(SALMON_OPTS) $(NUM_CPUS)
+	$(MKCMDBASH) $(SRC_SALMON)/runsalmonqm $(SALMON_PATH) $(RESLOC) $(INDEX_SALMON) $(SALMON_OPTS) $(NUM_CPUS) > $(LOGS)/$@.$(NOW).log 2>&1 &
 	
 	
 # pulseR ---
@@ -92,8 +92,8 @@ prep-fc:
 # prepare pulseR input from Salmon tables
 # prep-salmon:	
 	
-fc=$(RESLOC_PULSER)/featureCounts
-salmon=$(RESLOC_PULSER)/salmon
+fc-counts=$(RESLOC_PULSER)/featureCounts
+salmon-counts=$(RESLOC_PULSER)/salmon
 # all time points
 # make pulse-all-fc or pulse-all-salmon 
 pulse-all-%:

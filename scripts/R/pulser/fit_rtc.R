@@ -22,7 +22,7 @@ expressionThreshold <- 50
 ## input/output: all paths are relative to this directory
 
 args <- commandArgs(trailingOnly=TRUE)
-if (length(args)<3) { stop("./fit_rtc.R [SRC] [LOC] <0/1>\n", call.=FALSE) }
+if (length(args)<2) { stop("./fit_rtc.R [SRC] [LOC] <0/1>\n", call.=FALSE) }
 
 src <- args[1]
 source(file.path(src, "time_pts.R", fsep=.Platform$file.sep))

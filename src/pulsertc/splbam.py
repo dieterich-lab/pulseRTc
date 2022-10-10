@@ -28,7 +28,7 @@ import pysam as ps
 
 from collections import defaultdict
 
-import run.utils as utils
+import pulsertc.utils as utils
 
 logger = logging.getLogger(__name__)
         
@@ -218,8 +218,11 @@ def main():
 
     parser.add_argument('--overwrite', help='''If this flag is present, then existing files
         will be overwritten.''', action='store_true')
+   
+    parser.add_argument('-t', '--tmp', help="""Optional argument: where to write 
+        temporary files. If not specified, programs-specific tmp will be used.""", default=None)
     
-    
+
     utils.add_sbatch_options(parser, num_cpus=default_num_cpus, mem=default_mem)
     utils.add_logging_options(parser)
     args = parser.parse_args()

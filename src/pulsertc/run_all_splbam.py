@@ -55,15 +55,15 @@ def main():
 
     all_opt_str = ""
     if 'base_qual' in config.keys():
-        all_opt_str = f"-q {config["base_qual"]}"
+        all_opt_str = f"-q {config['base_qual']}"
     if 'trim5p' in config.keys():
-        all_opt_str = f"{all_opt_str} --trim5p {config["trim5p"]}"
+        all_opt_str = f"{all_opt_str} --trim5p {config['trim5p']}"
     if 'trim3p' in config.keys():
-        all_opt_str = f"{all_opt_str} --trim3p {config["trim3p"]}"
+        all_opt_str = f"{all_opt_str} --trim3p {config['trim3p']}"
     if 'ref_base' in config.keys():
-        all_opt_str = f"{all_opt_str} -ref {config["ref_base"]}"
+        all_opt_str = f"{all_opt_str} -ref {config['ref_base']}"
     if 'base_change' in config.keys():
-        all_opt_str = f"{all_opt_str} -bc {config["base_change"]}"
+        all_opt_str = f"{all_opt_str} -bc {config['base_change']}"
     
     vcf_str = ""
     if 'vcf' in config.keys() and config['vcf'] == True:
@@ -73,7 +73,7 @@ def main():
         logger.warning(msg)
     snpdata_str = ""
     if 'snpdata' in config.keys():
-        snpdata_str = f"-s {config["snpdata"]} {vcf_str}"
+        snpdata_str = f"-s {config['snpdata']} {vcf_str}"
     
     # handle do_not_call so that we do call splbam, but that it does not run anything
     call = not args.do_not_call
@@ -91,8 +91,8 @@ def main():
     for name, bam in config["samples"].items():
         
         bam_path = Path(config["bamloc"], bam).as_posix()
-        cmd = f"splbam {bam_path} {Path(config["parent"], "mapping").as_posix()} " \
-              f"{Path(config["parent"], "mismatches").as_posix()} {name} " \
+        cmd = f"splbam {bam_path} {Path(config['parent'], 'mapping').as_posix()} " \
+              f"{Path(config['parent'], 'mismatches').as_posix()} {name} " \
               f"{all_opt_str} {snpdata_str} --num-cpus {args.num_cpus} {mem_str} " \
               f"{logging_str} {overwrite_str} {do_not_call_str}"
         utils.check_sbatch(cmd, args=args)

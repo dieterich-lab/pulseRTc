@@ -90,6 +90,16 @@ We are now ready to proceed to read abundance quantification, as **pulseR** need
 ** my local what I done
 
 
+permission on scripts!
 
+prep-fc custom given format of data (sample names, etc.)
+
+change time_pts.R (and make sure model is adequaste)
+
+make pulse-all-fc-counts
+
+index salmon
+about keepduplicates, etc.
+https://github.com/COMBINE-lab/salmon/issues/214
 
 
