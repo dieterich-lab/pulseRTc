@@ -123,3 +123,13 @@ sumup <- function(fit, cis, pd = NULL) {
   cbind(fit, cis)
 }
 
+
+##' Various helper functions 
+
+extractTimesFromNames <- function(files) {
+  timeSets <- stringr::str_match_all(files, "-([0-9\\.].+)\\.rds") %>%
+    purrr::map(2)
+  timeSets
+}
+
+

@@ -6,7 +6,7 @@ SRC_GS=GRAND-SLAM
 SRC_R=R/analysis
 SRC_SALMON=Salmon
 SRC_PULSER=R/pulser
-
+SRC_ANALYSIS=R/analysis
 
 # pre-processing ---
 # optional
@@ -104,4 +104,15 @@ pulse-set-%:
 	${MKCMDRLONG} $(SRC_PULSER)/fit_rtc.R $(SRC_PULSER) $($*) 1 > $(LOGS)/$@.$(NOW).out 2>&1 &	
 	
 
+# downstream analyses ---
+
+# get all estimates into tables and match pulseR and GRAND-SLAM results
+# ONLY for gene quantification, i.e. featureCounts
+match-gs:
+	${MKCMDR} $(SRC_ANALYSIS)/get_estimates.R $(RESLOC_PULSER) $(BAMLOC_GS) $(OUTPUT_GS) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
+
+# annotate pulseR results into a new table using biomaRt
+# ONLY for gene quantification, i.e. featureCounts
+ann-pulse:
+	${MKCMDR} $(SRC_ANALYSIS)/annotate_pulser.R $(RESLOC_PULSER) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
 

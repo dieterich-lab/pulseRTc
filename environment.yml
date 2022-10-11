@@ -23,3 +23,5 @@ dependencies:
   - r-tidyverse
   - r-cowplot
   - r-gridextra
+  - r-stringi
+  - r-openxlsx

@@ -40,6 +40,8 @@ sed -i.bak -e 's/>//g' decoys.txt
 # genome targets (decoys) should come after the transcriptome targets in the reference
 cat ${TRX_FASTA} "${INDEXLOC}/${FASTA}" | gzip > gentrome.fa.gz
 
+# use --tmpdir
+
 # create index
 # we use recomment value of k=31 (reads ~75bp or longer), a shorter k value could be used for shorter reads
 # or to improve sensitivity with selective alignment (enabled via the –validateMappings flag).

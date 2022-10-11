@@ -68,7 +68,14 @@ The workflow is made up of different parts which may or may not all be run seque
 
 Under *pulseRTc/data*, we also provide examples of *SAMPLELIST.TXT* and *config.yaml* that are defined using variables `SAMPLELIST` and `YML`, respectively. `DATALOC` is the location where these files reside.
 
-If your BAM files are ready to be processed, the first step is to either run **GRAND-SLAM** or **BCFtools** to get SNPs. If you BAM files are not sorted/indexed, you can try the pre-processing steps `make get-sorted-bams`.
+If your BAM files are ready to be processed, the first step is to either run **GRAND-SLAM** or **BCFtools** to get SNPs, see further below.
+
+> **Warning**\
+> Make sure you have permission for all scripts!
+
+### Pre-processing
+
+If you BAM files are not sorted/indexed, you can try the pre-processing steps `make get-sorted-bams`.
 
 > **Warning**\
 > Pre-processing scripts such as `sortnrename` need to be modified, and in most cases will not run successfully on your files!
@@ -78,28 +85,36 @@ If your BAM files are ready to be processed, the first step is to either run **G
 
 In general, removing duplicate ( *e.g* due to PCR artefacts) might help to reduce number of false positives for variant calling. We remove duplicate with a custom script using `make get-dedups`.
 
-But suppose that our BAM files are ready, and that we want to get SNPs using **BCFtools**. We need to make sure `BCFLOC` and `OUTPUT_BCF` are set, and `make run-bcftools`. The final location of your BAM files is defined in the *config.yaml* using the `bamloc` key. This is automatically picked-up by *makefile.vars*. *SAMPLELIST.TXT* is a two column space-separated file with sample id and name that is used to faciliate pre-processing, but you don't need it if you already have a list of paths to your BAM files, one per line, in a file called `OUTPUT_BCF.bamlist` under the directory specified by `BCFLOC` (where you replace `OUTPUT_BCF` with the value set in *makefile.vars* ).
+### Estimate SNPs
 
-Once this is one, you need to update the `snpdata` key in the *config.yaml* with the output of **BCFtools**, and set `vcf: True`. You need to set `parent` and any program options, and `make run-workflow`. After completion, you can get some summary statistics using `make plot-mm`.
+If your BAM files are ready to be processed, then you want to get SNPs. We use **GRAND-SLAM**, but if you don't have it, you can use **BCFtools**. In that case, you need to make sure `BCFLOC` and `OUTPUT_BCF` are set, and `make run-bcftools`. The final location of your BAM files is defined in the *config.yaml* using the `bamloc` key. This is automatically picked-up by *makefile.vars*. 
 
-We are now ready to proceed to read abundance quantification, as **pulseR** needs read counts as input. If we are interested in gene read counts, then we can use **featureCounts**.
+*SAMPLELIST.TXT* is a two column space-separated file with sample id and name that is used to faciliate pre-processing, but you don't need it if you already have a list of paths to your BAM files, one per line, in a file called `OUTPUT_BCF.bamlist` under the directory specified by `BCFLOC` (where you replace `OUTPUT_BCF` with the value set in *makefile.vars* ).
+
+### Run splbam
+
+Once this is done, you need to update the `snpdata` key in the *config.yaml* with the output of **BCFtools** (or **GRAND-SLAM** ), and set `vcf: True` if using the **BCFtools** output. You need to set `parent` and any program options, and `make run-workflow`. After completion, you can get some summary statistics using `make plot-mm`.
+
+### Abundance estimation
+
+We are now ready to proceed to read abundance quantification, as **pulseR** needs read counts as input. If we are interested in gene read counts, then we can use **featureCounts**, and `make count-fc`. 
+
+### pulseR 
+
+To prepare **pulseR** input from **featureCounts** tables, we `make prep-fc`, then fit the models using `make pulse-all-fc`. Before fitting the models, selected time points have to be defined in [time_pts.R](scripts/R/pulser/time_pts.R).
+
+> **Note**\
+> `make pulse-all-fc` will fit all time points defined in [time_pts.R](scripts/R/pulser/time_pts.R) using *allSets*. After these results are available, you can fit subsets of time points using *timeSets* and `make pulse-set-fc`.
+
+> **Warning**\
+> The script [prep_fc.R](scripts/R/pulser/prep_fc.R) called using `make prep-fc` is NOT all-purpose, and may need to be adjusted depending on your data. If you already have count tables and associated metadata (R objects), they can be put under `pulsedir/featureCounts/data`, where `pulsedir` is given in the *config.yaml*. The count tables must be named `counts.rds` (gene by samples), and the metadata `samples.rds`, with columns `sample fraction time rep`, where `sample` must match the columns names of `counts.rds`.
+
+If you have matching results from **GRAND-SLAM**, you can combine all estimates from **pulseR** and **GRAND-SLAM** together by `make match-gs`.
 
 
 
-** note pulser counts
-** my local what I done
 
 
-permission on scripts!
 
-prep-fc custom given format of data (sample names, etc.)
-
-change time_pts.R (and make sure model is adequaste)
-
-make pulse-all-fc-counts
-
-index salmon
-about keepduplicates, etc.
-https://github.com/COMBINE-lab/salmon/issues/214
 
 

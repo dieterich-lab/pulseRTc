@@ -48,9 +48,5 @@ base_change: C # default C
 
 # pulseR output directory - created if does not exists
 # subdirectories "featureCounts" and "salmon" are created where necessary
+# downstream analyses are written to subdirectories of "featureCounts" and "salmon"
 pulsedir: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/results
-
-
-
-
-

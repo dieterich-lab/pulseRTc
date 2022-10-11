@@ -1,38 +1,57 @@
 #! /usr/bin/env Rscript
 
-# TODO: update
-
-# Usage: ./get_estimates.R 
-
+# Combine pulseR and GRAND-SLAM estimates into common tables.
 # Compute decay rates and confidence intervals for GRAND-SLAM for the different protocols.
 # MAP estimated using matched subset of time points (pulseR), approximate CIs obtained 
-# for each subset using the calculated MAP
+# for each subset using the calculated MAP.
+
+# Uses "gene quantification" i.e. featureCounts
+# Uses all time points fitted by pulseR (from file names)
+
+# Usage: ./get_estimates.R [RESLOC_PULSER] [BAMLOC_GS] [OUTPUT_GS] [SRC] 
+# 1: [RESLOC_PULSER] Results directory (pulseR)
+# 2. [BAMLOC_GS] Results directory (GRAND-SLAM)
+# 3. [OUTPUT_GS] Name of results (GRAND-SLAM)
+# 4. [SRC] pulseR script source directory
 
 library(dplyr)
 library(tibble)
 library(purrr)
 
-loc <- here::here()
+args <- commandArgs(trailingOnly=TRUE)
+if (length(args)<4) { stop("./get_estimates.R [RESLOC_PULSER] [BAMLOC_GS] [OUTPUT_GS] [SRC]\n", call.=FALSE) }
+
+src <- args[4]
+source(file.path(src, "utils.R", fsep=.Platform$file.sep)) 
 
 # GRAND-SLAM results
-gsLoc <- file.path(loc, "grand-slam", fsep=.Platform$file.sep)
-gsFit <- "all"
+gsLoc <- args[2]
+gsFit <- args[3]
+# local GRAND-SLAM tables - created
+gsDir <- file.path(gsLoc, "..", "tables", fsep=.Platform$file.sep)
+if (!dir.exists(gsDir)) {dir.create(gsDir, recursive=TRUE)}
 
 # pulseR results 
-pulseDir <- file.path(loc, "pulseRTc", "results", fsep=.Platform$file.sep)
+pulseDir <- file.path(args[1], "featureCounts", fsep=.Platform$file.sep)
 pulseFit <- "pulsefit"
 pulseCis <- "pulsecis"
+# combined output - created
+tabDir <- file.path(pulseDir, "analysis", "tables", fsep=.Platform$file.sep)
+if (!dir.exists(tabDir)) {dir.create(tabDir, recursive=TRUE)}
 
-# Output
-tabDir <- file.path(loc, "paper", "tables", fsep=.Platform$file.sep)
-gsDir <- file.path(gsLoc, "tables", fsep=.Platform$file.sep)
+# fitting sets 
+timeSets <- extractTimesFromNames(dir(pulseDir, pulseFit))
+# although we need names, we also need time points...
+timeSets <- lapply(timeSets, function(ts) { as.numeric(unlist(strsplit(ts, "-"))) })
 
-# Fitting sets - 4, 3 points or all
-prefix <- "../pulser"
-source(file.path(loc, "pulseRTc", "pulser", "utils.R", fsep=.Platform$file.sep)) 
-timeSets <- c(timeSets3, timeSets4, allSets)
+# assume all time points are used for every replicate
+samples <- readRDS(file.path(args[1], "featureCounts", "data", "samples.rds", fsep=.Platform$file.sep))
+allts <- unique(samples$time)
+allts <- allts[!allts==0]
+allreps <- unique(samples$rep)
+# all time points for one given param
+mlepars.gt <- rep(allts, length(allreps))
 
-#dataSets <- c("ercc", "std", "slam", "tls", "tuc")
 
 ## functions
 
@@ -52,19 +71,15 @@ getCI <- function(ll, interval, pars, optimum, confidence=0.95) {
   ci
 }
 
-# maximum a posteriori estimate for decay rate
-mle <- function(v, use=1:18, interval=c(1e-12,2), confidence=0.95) {
+# maximum a posteriori estimate for decay rate - fixed interval
+mle <- function(v, use, interval=c(1e-12,2), confidence=0.95) {
     # fixed output format GRAND-SLAM
     a <- v[seq(1, length(v), by=2)]
     b <- v[seq(2, length(v), by=2)]
-    # all time points for one given param
-    #t <- c(1, 2, 4, 8, 1, 2, 4, 8)
-    #t <- c(2, 4, 8, 16, 24, 2, 4, 8, 16, 24)
-    t <- c(1, 2, 4, 6, 8, 16, 1, 2, 4, 6, 8, 16, 1, 2, 4, 6, 8, 16)
     pars <- list()
     pars$a <- a[grep(use, names(a))]
     pars$b <- b[grep(use, names(b))]
-    pars$t <- t[grep(use, names(a))]
+    pars$t <- mlepars.gt[grep(use, names(a))]
     if(any(is.nan(c(pars$a,pars$b)))) return(list(map=NA, ci=c(NA, NA)))
     optimum <- optimize(loglik, interval, pars, maximum=T)$maximum
     ci <- getCI(loglik, interval, pars, optimum, confidence)
@@ -74,8 +89,9 @@ mle <- function(v, use=1:18, interval=c(1e-12,2), confidence=0.95) {
 
 ## data
 
-#gsFiles <- file.path(gsLoc , dataSets[grep("slam|tuc|tls", dataSets)], gsFit, paste(gsFit, "tsv", sep="."), fsep=.Platform$file.sep)
-gsFiles <- file.path(gsLoc, "results", gsFit, paste(gsFit, "tsv", sep="."), fsep=.Platform$file.sep)
+# taken from multiple comparison
+# we keep "map", although there is now only one file to process...
+gsFiles <- file.path(gsLoc, gsFit, paste(gsFit, "tsv", sep="."), fsep=.Platform$file.sep)
 print(paste("Using: ", gsFiles, " ...", sep=""))
 
 gsList <- map(gsFiles, function(.id) {
@@ -88,13 +104,16 @@ gsList <- map(gsFiles, function(.id) {
 MAPr <- map(gsList, 
             function(.id) {
                 ld <- list()
-                data <- 'grandslam' #unlist(strsplit(colnames(.id)[1], "_"))[2]
+                data <- 'grandslam' # unlist(strsplit(colnames(.id)[1], "_"))[2]
                 for (idx in seq_along(timeSets)) {
                     d <- data.frame(gene=rownames(.id), check.names=FALSE)
                     tp <-  as.integer(timeSets[[idx]])
                     tp <- tp[!tp==0] # not fitted by GS, used to model pe
                     #label <- paste(data, paste(paste(tp, collapse=","), "h", sep=""))
                     label <- paste(paste(tp, collapse=","), "h", sep="")
+                    # define this according to the workflow output...
+                    # uses e.g. 0h, 1h, etc.
+                    # this is HARD CODED...
                     use <- paste(paste(tp, 'h', sep = ""), collapse = "|")
                     out <- unlist(apply(as.matrix(.id), 1, mle, use=use), 
                                   recursive = F, use.names = F)
