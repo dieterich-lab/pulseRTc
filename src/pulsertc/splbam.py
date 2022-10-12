@@ -10,11 +10,12 @@ on mismatch rates, etc.
 NOTE: We use the notation labelled/unlabelled, but 
       new/old (RNA) would be less ambiguous, cf. 
       biochemical separation.
-
-NOTE: Hard coded library type RF-FIRSTSTRAND!
-
+      
 NOTE: Currently using GRAND-SLAM snpdata - default
       format (P Value = 0.001)  
+      
+WARNING: Hard coded library type RF-FIRSTSTRAND!
+
 """
 
 import os
