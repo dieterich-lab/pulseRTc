@@ -81,7 +81,7 @@ run-bam2fastq:
 
 # read counting - Salmon in (quasi-)mapping-based mode 
 run-salmon-qm:
-	$(MKCMDBASH) $(SRC_SALMON)/runsalmonqm $(SALMON_PATH) $(RESLOC) $(INDEX_SALMON) $(SALMON_OPTS) $(NUM_CPUS) > $(LOGS)/$@.$(NOW).log 2>&1 &
+	$(MKCMDBASH) $(SRC_SALMON)/runsalmonqm $(SALMON_PATH) $(RESLOC) $(INDEX_SALMON) $(NUM_CPUS) $(SALMON_OPTS) > $(LOGS)/$@.$(NOW).log 2>&1 &
 	
 	
 # pulseR ---
@@ -90,7 +90,8 @@ run-salmon-qm:
 prep-fc:
 	${MKCMDR} $(SRC_PULSER)/prep_fc.R $(RESLOC) $(RESLOC_PULSER) $(OUTPUT_FC) > $(LOGS)/$@.$(NOW).log 2>&1 &
 # prepare pulseR input from Salmon tables
-# prep-salmon:	
+prep-salmon:	
+	${MKCMDR} $(SRC_PULSER)/prep_salmon.R $(RESLOC) $(RESLOC_PULSER) $(OUTPUT_SALMON) > $(LOGS)/$@.$(NOW).log 2>&1 &
 	
 fc-counts=$(RESLOC_PULSER)/featureCounts
 salmon-counts=$(RESLOC_PULSER)/salmon
