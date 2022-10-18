@@ -2,7 +2,7 @@
 pulseRTc
 ========
 
-Starting from alignments (BAM files), **pulseRTc** can be used to infer genome-wide kinetics of RNA abundance from 4sU-tagging metabolic labeling methods, including biochemical enrichment after thiol-specific biotinylation, and recent approaches such as SLAM-seq, TimeLapse-seq or TUC-seq that rely on bioinformatic enrichment of newly transcribed RNAs.
+Starting from alignments (BAM files), **pulseRTc** can be used to infer genome-wide kinetics of RNA abundance from 4sU-tagging metabolic labeling methods, including biochemical enrichment after thiol-specific biotinylation, and recent approaches such as [SLAM-seq](https://www.nature.com/articles/nmeth.4435), [TimeLapse-seq](https://www.nature.com/articles/nmeth.4582) or [TUC-seq](https://onlinelibrary.wiley.com/doi/10.1002/anie.201707465) that rely on bioinformatic enrichment of newly transcribed RNAs.
 
 We use [pulseR](https://dieterich-lab.github.io/pulseR/index.html), a kinetic and statistical modelling framework, to estimate RNA decay rates (half-lives). 
 To handle data arising from nucleotide conversion protocols, alignment files are split into old/pre-existing (unlabeled) and new (metabolically labeled, T -> C) reads. 
@@ -67,7 +67,7 @@ pip --verbose install [-e] . 2<&1 | tee install.log
 Running **pulseRTc**
 ====================
 
-The workflow is made up of different parts which may or may not all be run sequentially. To get started, we `cd scripts`, and set all paths, variables, and program options in [makefile.vars](scripts/makefile.vars). None of these paths is required to be located in this repository, *i.e.* they can be anywhere, as long as they are accessible. Most of them are self-explanatory, *e.g* `INDEXLOC` is the path to your `FASTA` and `GTF` files, *etc.* You also need to define which commands `MKCMD` are used to call programs, *i.e.* whether you use Slurm, or simply bash, *etc.*
+The workflow is made up of different parts which may or may not all be run sequentially. To get started, `cd scripts`, and set all paths, variables, and program options in [makefile.vars](scripts/makefile.vars). None of these paths is required to be located in this repository, *i.e.* they can be anywhere, as long as they are accessible. Most of them are self-explanatory, *e.g* `INDEXLOC` is the path to your `FASTA` and `GTF` files, *etc.* You also need to define which commands `MKCMD` are used to call programs, *i.e.* whether you use Slurm, or simply bash, *etc.*
 
 We also provide examples of [SAMPLELIST.TXT](data/SAMPLELIST.TXT) and [config.yaml](data/config.yaml) that are defined using variables `SAMPLELIST` and `YML`, respectively. `DATALOC` is the location where these files reside.
 
@@ -92,7 +92,7 @@ In general, removing duplicate ( *e.g* due to PCR artefacts) might help to reduc
 
 If your BAM files are ready to be processed, then you want to get SNPs. We use **GRAND-SLAM**, but if you don't have it, you can use **BCFtools**. In that case, you need to make sure `BCFLOC` and `OUTPUT_BCF` are set, and `make run-bcftools`. The final location of your BAM files is defined in the [config.yaml](data/config.yaml) using the `bamloc` key. This is automatically picked-up by [makefile.vars](scripts/makefile.vars). 
 
-[SAMPLELIST.TXT](data/SAMPLELIST.TXT) is a two column space-separated file with sample id and name (rep_time) that is used to faciliate pre-processing, but you don't need it if you already have a list of paths to your BAM files, one per line, in a file called `OUTPUT_BCF.bamlist` under the directory specified by `BCFLOC` (where you replace `OUTPUT_BCF` with the value set in [makefile.vars](scripts/makefile.vars) ).
+[SAMPLELIST.TXT](data/SAMPLELIST.TXT) is a two column space-separated file with *sample id* and *name* (formatted as rep_time) that is used to faciliate pre-processing, but you don't need it if you already have a list of paths to your BAM files, one per line, in a file called `OUTPUT_BCF.bamlist` under the directory specified by `BCFLOC` (where you replace `OUTPUT_BCF` with the value set in [makefile.vars](scripts/makefile.vars) ).
 
 ### Run splbam
 
@@ -104,10 +104,10 @@ We are now ready to proceed to read abundance quantification, as **pulseR** need
 
 ### pulseR 
 
-To prepare **pulseR** input from **featureCounts** tables, we `make prep-fc`, then fit the models using `make pulse-all-fc`. Before fitting the models, selected time points have to be defined in [time_pts.R](scripts/R/pulser/time_pts.R).
+To prepare **pulseR** input from **featureCounts** tables, we `make prep-fc`, then fit the models using `make pulse-all-fc-counts`. Before fitting the models, selected time points have to be defined in [time_pts.R](scripts/R/pulser/time_pts.R).
 
 > **Note**\
-> `make pulse-all-fc` will fit all time points defined in [time_pts.R](scripts/R/pulser/time_pts.R) using *allSets*. After these results are available, you can fit subsets of time points using *timeSets* and `make pulse-set-fc`.
+> `make pulse-all-fc-counts` will fit all time points defined in [time_pts.R](scripts/R/pulser/time_pts.R) using *allSets*. After these results are available, you can fit subsets of time points using *timeSets* and `make pulse-set-fc-counts`.
 
 > **Warning**\
 > The script [prep_fc.R](scripts/R/pulser/prep_fc.R) called using `make prep-fc` is NOT all-purpose, and may need to be adjusted depending on your data. If you already have count tables and associated metadata (R objects), they can be put under `pulsedir/featureCounts/data`, where `pulsedir` is given in the [config.yaml](data/config.yaml). The count tables must be named `counts.rds` (gene by samples), and the metadata `samples.rds`, with columns `sample fraction time rep`, where `sample` must match the columns names of `counts.rds`.
@@ -118,12 +118,5 @@ If you have matching results from **GRAND-SLAM**, you can combine all estimates 
 
 We use **Salmon** for transcript abundance quantification (and **GffRead** to extract transcript sequences). Variables `INDEX_SALMON`, `SALMON_PATH`, `SALMON_OPTS`, and `GFFREAD_PATH` need to be set in [makefile.vars](scripts/makefile.vars). We use **Salmon** in (quasi-mapping) mapping-based mode with a decoy-aware transcriptome (using the entire genome): the indexing step is independent of the reads, and only needs to be run once for a particular set of reference transcripts. This can be done with `get-salmon-index`. This generally results in larger index files, see [here](https://github.com/COMBINE-lab/salmon) for other options. If you already have an index, you can skip this part, but make sure to set `INDEX_SALMON` to the parent directory of your index files, which must be located in a sub-directory called **index**.
 
-Since we already have *split* BAM files, we only need to convert them back to FASTQ. Salmon does not currently have built-in support for interleaved FASTQ files, so READ1 and READ1 (paired-end sequencing reads) flags are directed to different files. Since our BAM files were coordinate sorted, we shuffle and groups reads beforehand.
+Since we already have *split* BAM files, we only need to convert them back to FASTQ. Salmon does not currently have built-in support for interleaved FASTQ files, so READ1 and READ1 (paired-end sequencing reads) flags are directed to different files. Since our BAM files were coordinate sorted, we shuffle and groups reads beforehand. This is done with `make run-bam2fastq`, followed by `make run-salmon-qm`.
 
-be sure that the reads are not sorted by position, and that all alignments for the same read appear consecutively in the alignment file.
-
-
-
-singularity pull combinelab_salmon.sif docker://combinelab/salmon
-
-singularity exec --bind /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/workflow/salmon_idx/:/combinelab_salmon_idx combinelab_salmon.sif salmon index -t /combinelab_salmon_idx/gentrome.fa.gz -d /combinelab_salmon_idx/decoys.txt -k 31 -p 24 -i /combinelab_salmon_idx/combinelab_index_singularity

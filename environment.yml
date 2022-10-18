@@ -25,3 +25,6 @@ dependencies:
   - r-gridextra
   - r-stringi
   - r-openxlsx
+  # required for GRAND-SLAM
+  #- r-reshape2
+  #- r-plyr
