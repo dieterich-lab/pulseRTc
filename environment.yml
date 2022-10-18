@@ -25,6 +25,8 @@ dependencies:
   - r-gridextra
   - r-stringi
   - r-openxlsx
+  - r-kernsmooth
+  - r-magick
   # required for GRAND-SLAM
   #- r-reshape2
   #- r-plyr

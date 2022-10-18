@@ -108,9 +108,14 @@ pulse-set-%:
 # downstream analyses ---
 
 # get all estimates into tables and match pulseR and GRAND-SLAM results
-# ONLY for gene quantification, i.e. featureCounts
+# WARNING: for gene quantification, i.e. featureCounts and GRAND-SLAM results
 match-gs:
 	${MKCMDR} $(SRC_ANALYSIS)/get_estimates.R $(RESLOC_PULSER) $(BAMLOC_GS) $(OUTPUT_GS) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
+
+# plot pulseR and GRAND-SLAM results comparison/correlation
+# WARNING: for gene quantification, i.e. featureCounts and GRAND-SLAM results
+plot-match:
+	${MKCMDR} $(SRC_ANALYSIS)/plot_corrm.R $(RESLOC_PULSER) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
 
 # annotate pulseR results into a new table using biomaRt
 # ONLY for gene quantification, i.e. featureCounts

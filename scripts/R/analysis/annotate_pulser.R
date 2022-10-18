@@ -22,9 +22,7 @@ library(org.Hs.eg.db)
 library(biomaRt)
 
 
-args <- commandArgs(trailingOnly=TRUE)
-if (length(args)<2) 
-
+args <- commandArgs(trailingOnly=TRUE) 
 split <- FALSE
 if (length(args)<2) {
   stop("./annotate_pulser.R [RESLOC_PULSER] [SRC] <0/1>\n", call.=FALSE)
