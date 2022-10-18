@@ -92,7 +92,7 @@ In general, removing duplicate ( *e.g* due to PCR artefacts) might help to reduc
 
 If your BAM files are ready to be processed, then you want to get SNPs. We use **GRAND-SLAM**, but if you don't have it, you can use **BCFtools**. In that case, you need to make sure `BCFLOC` and `OUTPUT_BCF` are set, and `make run-bcftools`. The final location of your BAM files is defined in the [config.yaml](data/config.yaml) using the `bamloc` key. This is automatically picked-up by [makefile.vars](scripts/makefile.vars). 
 
-[SAMPLELIST.TXT](data/SAMPLELIST.TXT) is a two column space-separated file with sample id and name that is used to faciliate pre-processing, but you don't need it if you already have a list of paths to your BAM files, one per line, in a file called `OUTPUT_BCF.bamlist` under the directory specified by `BCFLOC` (where you replace `OUTPUT_BCF` with the value set in [makefile.vars](scripts/makefile.vars) ).
+[SAMPLELIST.TXT](data/SAMPLELIST.TXT) is a two column space-separated file with sample id and name (rep_time) that is used to faciliate pre-processing, but you don't need it if you already have a list of paths to your BAM files, one per line, in a file called `OUTPUT_BCF.bamlist` under the directory specified by `BCFLOC` (where you replace `OUTPUT_BCF` with the value set in [makefile.vars](scripts/makefile.vars) ).
 
 ### Run splbam
 

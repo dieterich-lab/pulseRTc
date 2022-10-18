@@ -91,16 +91,16 @@ prep-fc:
 	${MKCMDR} $(SRC_PULSER)/prep_fc.R $(RESLOC) $(RESLOC_PULSER) $(OUTPUT_FC) > $(LOGS)/$@.$(NOW).log 2>&1 &
 # prepare pulseR input from Salmon tables
 prep-salmon:	
-	${MKCMDR} $(SRC_PULSER)/prep_salmon.R $(RESLOC) $(RESLOC_PULSER) $(OUTPUT_SALMON) > $(LOGS)/$@.$(NOW).log 2>&1 &
+	${MKCMDR} $(SRC_PULSER)/prep_salmon.R $(RESLOC) $(RESLOC_PULSER) > $(LOGS)/$@.$(NOW).log 2>&1 &
 	
 fc-counts=$(RESLOC_PULSER)/featureCounts
-salmon-counts=$(RESLOC_PULSER)/salmon
+salmon-counts=$(RESLOC_PULSER)/Salmon
 # all time points
-# make pulse-all-fc or pulse-all-salmon 
+# make pulse-all-fc-counts or pulse-all-salmon-counts 
 pulse-all-%:
 	${MKCMDRLONG} $(SRC_PULSER)/fit_rtc.R $(SRC_PULSER) $($*) > $(LOGS)/$@.$(NOW).out 2>&1 &
 # subset of time points
-# make pulse-set-fc or pulse-set-salmon 
+# make pulse-set-fc-counts or pulse-set-salmon-counts 
 pulse-set-%:
 	${MKCMDRLONG} $(SRC_PULSER)/fit_rtc.R $(SRC_PULSER) $($*) 1 > $(LOGS)/$@.$(NOW).out 2>&1 &	
 	
