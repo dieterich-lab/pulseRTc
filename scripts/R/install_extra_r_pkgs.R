@@ -21,7 +21,8 @@ if (length(args)>0 & args[1]=="all") {
         #"IHW",
         #"Glimma",
         #"topGO",
-        #"org.Hs.eg.db"
+        #"org.Hs.eg.db",
+        #"biomaRt"
     )
     bioc_pkgs <- bioc_pkgs[!bioc_pkgs %in% installed.packages()[,1]]
     if (!requireNamespace("BiocManager", quietly = TRUE))

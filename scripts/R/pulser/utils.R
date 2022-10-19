@@ -36,7 +36,7 @@ whichHigh <- function(x, level) {
 
 
 ##' Set all options
-setOpts <- function(bounds, tolerance, cores = 24, replicates = 5, normFactors = NULL) {
+setOpts <- function(bounds, tolerance, cores = 40, replicates = 5, normFactors = NULL) {
   opts <- setFittingOptions(verbose = "verbose")
   opts$cores <- cores
   opts$replicates <- replicates
@@ -122,4 +122,14 @@ sumup <- function(fit, cis, pd = NULL) {
   cis <- setNames(as.data.frame(do.call(cbind, cis)), unlist(cisNames))
   cbind(fit, cis)
 }
+
+
+##' Various helper functions 
+
+extractTimesFromNames <- function(files) {
+  timeSets <- stringr::str_match_all(files, "-([0-9\\.].+)\\.rds") %>%
+    purrr::map(2)
+  timeSets
+}
+
 

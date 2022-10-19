@@ -19,7 +19,7 @@ files=($2/*)
 OUTPUT="$2"
 while IFS=" " read -r sample name
  do
-   FILEN=$(printf '%s\n' "${files[@]}" | grep $sample | grep -v ".bai")
+   FILEN=$(printf '%s\n' "${files[@]}" | grep $sample | grep "sorted" | grep -v ".bai")
    NAME="${OUTPUT}/${sample}_${name}.sortdedup"
    echo "Processing ${FILEN}..."
    java -jar ${PICARD} MarkDuplicates \

@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Usage: 
+# 	runbas2fastq RESLOC NUMCPUS
+
+# Convert "split" BAM files back to FASTQ
+
+if [[ $# -ne 2 ]]; then
+  echo "Usage: $0 [RESLOC] [NUMCPUS]"
+  exit
+fi
+
+# location of BAM files
+RESLOC="$1/mapping"
+# output - where to write FASTQ
+OUTPUT="$1/raw"
+# threads
+NUMCPUS="-@$2"
+
+echo "Writing to $OUTPUT ..."
+if [ ! -d "${OUTPUT}" ]; then
+ mkdir -p "${OUTPUT}"
+fi
+
+for f in $RESLOC/*.bam
+ do  
+  echo "Processing $f ..."
+  filename=$(basename -- "$f")
+  mate1="${filename%.*}_R1.fastq.gz"
+  mate2="${filename%.*}_R2.fastq.gz"
+  echo "Writing $mate1 and $mate2 ..."
+  samtools collate $NUMCPUS -O $f | samtools fastq $NUMCPUS -1 "${OUTPUT}/${mate1}" -2 "${OUTPUT}/${mate2}" -0 /dev/null -s /dev/null -n
+ done
+ 

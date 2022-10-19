@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Usage: 
+# 	getindex SALMON GFFREAD INDEXLOC FASTA GTF SALMONINDEX NUMCPUS
+
+# Prepare Salmon index for quasi-mapping mode
+
+if [[ $# -ne 7 ]]; then
+  echo "Usage: $0 [SALMON] [GFFREAD] [INDEXLOC] [FASTA] [GTF] [SALMONINDEX] [NUMCPUS]"
+  exit
+fi
+
+# executable
+SALMON=$1
+GFFREAD=$2
+# location of index files (gtf/fasta)
+INDEXLOC=$3
+# name of fasta file
+FASTA=$4
+# name of gtf file
+GTF=$5
+# Salmon index directory - created if does not exists
+SALMONINDEX=$6
+# cpus for indexing
+NUMCPUS=$7
+
+if [ ! -d "${SALMONINDEX}" ]; then
+ mkdir -p "${SALMONINDEX}"
+fi
+cd "$SALMONINDEX"
+
+# get transcript fasta
+TRX_FASTA="${FASTA%.*}_transcripts.fa"
+$GFFREAD -w ${TRX_FASTA} -g "${INDEXLOC}/${FASTA}" "${INDEXLOC}/${GTF}"
+
+# prepare metadata
+# assume fasta is not gz, otherwise we need to add check/option
+grep "^>" "${INDEXLOC}/${FASTA}" | cut -d " " -f 1 > decoys.txt
+sed -i.bak -e 's/>//g' decoys.txt
+# genome targets (decoys) should come after the transcriptome targets in the reference
+cat ${TRX_FASTA} "${INDEXLOC}/${FASTA}" | gzip > gentrome.fa.gz
+
+# use --tmpdir
+
+# create index
+# we use recomment value of k=31 (reads ~75bp or longer), a shorter k value could be used for shorter reads
+# or to improve sensitivity with selective alignment (enabled via the –validateMappings flag).
+# If you are seeing a smaller mapping rate than you might expect, consider building the index with a slightly smaller k!
+$SALMON index -t gentrome.fa.gz -d decoys.txt -k 31 -p ${NUMCPUS} -i index

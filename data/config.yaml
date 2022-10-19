@@ -1,38 +1,42 @@
 # configuration file 
 
 # BAM files - ready for input
+# full path is constructed as bamloc/samples[key] at runtime, e.g. 
+# /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping/161634_WTA_0h.sortdedup.bam
+# bamloc directory must exists
+bamloc: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping
 samples:
- 161634_WTA_0h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161634_WTA_0h.sortdedup.bam
- 161637_WTA_1h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161637_WTA_1h.sortdedup.bam
- 161639_WTA_2h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161639_WTA_2h.sortdedup.bam
- 161641_WTA_4h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161641_WTA_4h.sortdedup.bam
- 161643_WTA_6h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161643_WTA_6h.sortdedup.bam
- 161645_WTA_8h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161645_WTA_8h.sortdedup.bam
- 161647_WTA_16h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161647_WTA_16h.sortdedup.bam
- 161649_WTB_0h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161649_WTB_0h.sortdedup.bam
- 161651_WTB_1h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161651_WTB_1h.sortdedup.bam
- 161653_WTB_2h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161653_WTB_2h.sortdedup.bam
- 161655_WTB_4h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161655_WTB_4h.sortdedup.bam
- 161657_WTB_6h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161657_WTB_6h.sortdedup.bam
- 161659_WTB_8h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161659_WTB_8h.sortdedup.bam
- 161661_WTB_16h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161661_WTB_16h.sortdedup.bam
- 161663_WTC_0h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161663_WTC_0h.sortdedup.bam
- 161665_WTC_1h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161665_WTC_1h.sortdedup.bam
- 161667_WTC_2h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161667_WTC_2h.sortdedup.bam
- 161669_WTC_4h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161669_WTC_4h.sortdedup.bam
- 161671_WTC_6h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161671_WTC_6h.sortdedup.bam
- 161673_WTC_8h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161673_WTC_8h.sortdedup.bam
- 161675_WTC_16h: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping_slim/161675_WTC_16h.sortdedup.bam
+ 161634_WTA_0h: 161634_WTA_0h.sortdedup.bam
+ 161637_WTA_1h: 161637_WTA_1h.sortdedup.bam
+ 161639_WTA_2h: 161639_WTA_2h.sortdedup.bam
+ 161641_WTA_4h: 161641_WTA_4h.sortdedup.bam
+ 161643_WTA_6h: 161643_WTA_6h.sortdedup.bam
+ 161645_WTA_8h: 161645_WTA_8h.sortdedup.bam
+ 161647_WTA_16h: 161647_WTA_16h.sortdedup.bam
+ 161649_WTB_0h: 161649_WTB_0h.sortdedup.bam
+ 161651_WTB_1h: 161651_WTB_1h.sortdedup.bam
+ 161653_WTB_2h: 161653_WTB_2h.sortdedup.bam
+ 161655_WTB_4h: 161655_WTB_4h.sortdedup.bam
+ 161657_WTB_6h: 161657_WTB_6h.sortdedup.bam
+ 161659_WTB_8h: 161659_WTB_8h.sortdedup.bam
+ 161661_WTB_16h: 161661_WTB_16h.sortdedup.bam
+ 161663_WTC_0h: 161663_WTC_0h.sortdedup.bam
+ 161665_WTC_1h: 161665_WTC_1h.sortdedup.bam
+ 161667_WTC_2h: 161667_WTC_2h.sortdedup.bam
+ 161669_WTC_4h: 161669_WTC_4h.sortdedup.bam
+ 161671_WTC_6h: 161671_WTC_6h.sortdedup.bam
+ 161673_WTC_8h: 161673_WTC_8h.sortdedup.bam
+ 161675_WTC_16h: 161675_WTC_16h.sortdedup.bam
 
 # parent output directory - created if does not exists
-# subdirectories "mapping", "mismatches", and "tables" are created
-parent: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/pulseRT/workflow
+# subdirectories "mapping" ("raw"), "mismatches", and "tables" (featureCounts and/or Salmon) are created
+parent: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/workflow
 
 # SNPs file - ideally this file contains SNPs found on the set of all samples listed above
 # we currently use the snpdata from GRAND-SLAM (default format - Location\tCoverage\tMismatches\tP value)
 # comment out to run the pipeline without removing SNPs
 # if using BCFtools, don't forget to use the [--vcf] option (set vfc to True)!
-snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/SLAM/grand-slam/results/all/all.snpdata
+snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/grand-slam/results/all/all.snpdata
 
 # program options - if unspecified uses default in splbam
 base_qual: 20 # default 20
@@ -44,10 +48,5 @@ base_change: C # default C
 
 # pulseR output directory - created if does not exists
 # subdirectories "featureCounts" and "salmon" are created where necessary
-pulsedir: 
-
-
-
-
-
-
+# downstream analyses are written to subdirectories of "featureCounts" and "salmon"
+pulsedir: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/results

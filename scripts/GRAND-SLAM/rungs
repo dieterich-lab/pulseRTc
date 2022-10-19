@@ -49,6 +49,10 @@ cat > ${JOBNAME} << EOF
 #SBATCH --mail-type=FAIL,TIME_LIMIT
 #SBATCH --output=$LOG
 
+
+#GRAND-SLAM calls R for plotting
+export PATH="/home/eboileau/.miniconda3/envs/pulsertc/bin:$PATH"
+
 $GEDI -e Slam -genomic $INDEX $GSOPTS -nthreads $NUMCPUS -prefix $PREFIX -reads $READS 
 EOF
 sbatch ${JOBNAME}

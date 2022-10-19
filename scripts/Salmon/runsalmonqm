@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Usage: 
+# 	runsalmon SALMON LOC INDEX NUMCPUS OPTS
+
+# Run Salmon in (quasi-)maping-based mode
+# WARNING: hard coded for paired-end libraries (input FASTQ split into -1 and -2)
+#          other options passed via OPTS
+
+if [[ $# -lt 5 ]]; then
+  echo "Usage: $0 [SALMON] [LOC] [INDEX] [NUMCPUS] [OPTS]"
+  exit
+fi
+
+# executable
+SALMON=$1
+# location of raw files (fastq)
+LOC="$2/raw"
+# output directory - created if does not exists
+OUTPUT="$2/tables/Salmon"
+# Salmon index directory 
+INDEX="$3/index"
+# Salom options
+OPTS=$5
+# cpus for indexing
+NUMCPUS=$4
+
+if [ ! -d "${OUTPUT}" ]; then
+ mkdir -p "${OUTPUT}"
+fi
+
+# prep files
+cd $LOC
+mapfile -t R1 <<< "$(ls $LOC | grep _R1.fastq.gz | sort)"
+# echo "Processing ${#R1[@]} R1 FASTQ files..."
+mapfile -t R2 <<< "$(ls $LOC | grep _R2.fastq.gz | sort)"
+# echo "Processing ${#R2[@]} R2 FASTQ files..."
+# call salmon
+# echo "Calling: salmon quant -i $INDEX -p $NUMCPUS ${OPTS} -1 <(gunzip -c ${R1[@]}) -2 <(gunzip -c ${R2[@]}) -o ${OUTPUT} ..."
+# $SALMON quant -i $INDEX -p $NUMCPUS ${OPTS} -1 <(gunzip -c ${R1[@]}) -2 <(gunzip -c ${R2[@]}) -o ${OUTPUT}
+for i in "${!R1[@]}"; do 
+  output=$(echo ${R1[$i]} | cut -d'.' -f1-2)
+  output="${output%_*}"
+  printf "CALLING:%s\t%s\t%s\t%s\n" "$i" "${R1[$i]} ${R2[$i]} ${output}"
+  $SALMON quant -i $INDEX -p $NUMCPUS ${OPTS} -1 ${R1[$i]} -2 ${R2[$i]} -o "${OUTPUT}/${output}"
+done
