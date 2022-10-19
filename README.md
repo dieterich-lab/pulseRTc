@@ -120,3 +120,7 @@ We use **Salmon** for transcript abundance quantification (and **GffRead** to ex
 
 Since we already have *split* BAM files, we only need to convert them back to FASTQ. Salmon does not currently have built-in support for interleaved FASTQ files, so READ1 and READ1 (paired-end sequencing reads) flags are directed to different files. Since our BAM files were coordinate sorted, we shuffle and groups reads beforehand. This is done with `make run-bam2fastq`, followed by `make run-salmon-qm`.
 
+### Downstrean analyses
+
+Some scripts are available *e.g.* to compare **pulseR** and **GRAND-SLAM** results, or perform DGE to check gene expression at varying labeling times *vs.* 0 (unlabelled), however many of these currently contain hard coded parameters/options.
+

@@ -10,3 +10,4 @@ Added conda install, package, additional scripts, *etc.*
 ## Added
 
 - Salmon quantification
+- Selected downstream analysis scripts
