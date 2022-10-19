@@ -7,6 +7,7 @@ SRC_R=R/analysis
 SRC_SALMON=Salmon
 SRC_PULSER=R/pulser
 SRC_ANALYSIS=R/analysis
+SRC_DGE=R/dge
 
 # pre-processing ---
 # optional
@@ -106,21 +107,25 @@ pulse-set-%:
 	
 
 # downstream analyses ---
+# WARNING: Some scripts have hard coded options, e.g. annotation org.Hs.eg.db, etc. or 
+#	   are only relevant if GRAND-SLAM results are available
 
 # get all estimates into tables and match pulseR and GRAND-SLAM results
-# WARNING: for gene quantification, i.e. featureCounts and GRAND-SLAM results
+# ONLY for gene quantification, i.e. featureCounts AND GRAND-SLAM results
 match-gs:
 	${MKCMDR} $(SRC_ANALYSIS)/get_estimates.R $(RESLOC_PULSER) $(BAMLOC_GS) $(OUTPUT_GS) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
 
 # plot pulseR and GRAND-SLAM results comparison/correlation
-# WARNING: for gene quantification, i.e. featureCounts and GRAND-SLAM results
+# ONLY for gene quantification, i.e. featureCounts AND GRAND-SLAM results
 plot-match:
 	${MKCMDR} $(SRC_ANALYSIS)/plot_corrm.R $(RESLOC_PULSER) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
 
 # annotate pulseR results into a new table using biomaRt
-# ONLY for gene quantification, i.e. featureCounts
-ann-pulse:
-	${MKCMDR} $(SRC_ANALYSIS)/annotate_pulser.R $(RESLOC_PULSER) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
+# gene (featureCounts) trx (Salmon)
+gene=0
+trx=1
+ann-pulse-%:
+	${MKCMDR} $(SRC_ANALYSIS)/annotate_pulser.R $(RESLOC_PULSER) $(SRC_PULSER) $($*) > $(LOGS)/$@.$(NOW).out 2>&1 &
 
 # read counting - "un-split" files for DGE
 # gene expression at varying labeling times vs. 0 (unlabelled)
@@ -130,10 +135,10 @@ RES_DGE=$(RES_DGE_PARENT)/$*$(OUTPUT_FC)
 count-%:
 	[ -d $(RES_DGE_PARENT) ] || mkdir -p $(RES_DGE_PARENT)
 	$(MKCMDBASH) featureCounts $(FC_OPTS) -T $(NUM_CPUS) --tmpDir $(TMPDIR) -a $(INDEXLOC)/$(GTF) -o $(RES_DGE) $($*) > $(LOGS)/$@.$(NOW).log 2>&1 &
+# call DESeq on all time points
+run-dge:
+	${MKCMDR} $(SRC_DGE)/run_deseq.R $(BAMLOC_1) $(RESLOC_PULSER) $(OUTPUT_FC) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
+# GSEA
+run-cellplot:
+	${MKCMDR} $(SRC_DGE)/run_cellplot.R $(RESLOC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
 
-
-# SRC=scripts
-# run-dge:
-# 	srun $(SRC)/run-deseq.R all > $(LOG)/$@.$(NOW).out 2>&1 & 
-# run-cellplot:
-# 	srun $(SRC)/run-cellplot.R > $(LOG)/$@.$(NOW).out 2>&1 &

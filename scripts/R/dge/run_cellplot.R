@@ -1,16 +1,29 @@
 #! /usr/bin/env Rscript
 
+# GSEA using output from "run_deseq.R" 
 
+# Usage: ./run_cellplot.R [RESLOC] 
+# 1: [RESLOC] Results directory
+
+# WARNING Hard coded: update path for missing libraries...
+.libPaths( c( .libPaths(), "/beegfs/homes/eboileau/R/x86_64-pc-linux-gnu-library/4.2", "/beegfs/biosw/R/4.2.1_deb11/lib/R/library") )
+
+# WARNING Hard coded annotation org.Hs.eg.db, etc. and FRD/LFC cut-off
 
 library(topGO)
 library(CellPlot)
 
+library(parallel)
 library(dplyr)
 library(purrr)
 library(tibble)
 
 library(openxlsx)
 
+
+# get params and options
+args <- commandArgs(trailingOnly=TRUE)
+if (length(args)<1) { stop("USAGE: run_cellplot.R [RESLOC] \n", call.=FALSE) }
 
 # ---------------------------------------------------------
 
@@ -28,14 +41,14 @@ pvalCutOff <- 0.05 # everywhere
 
 ## Call
 
-loc <- here::here("paper", "dge")
-dirloc.out <- file.path(loc, 'results')
-# contrast <- 'time_8_vs_0.xlsx'
-# main <- "GO enrichment 8h vs. 0h labeling"
+outDir <- file.path(args[1], "DESeq", "results", fsep=.Platform$file.sep)
+contrasts <- list.files(outDir, pattern = "*.xlsx")
 
 call_cellplot <- function(contrast) {
-
-    dge <- read.xlsx(file.path(dirloc.out, contrast),
+    
+    print(paste("Processing ", file.path(outDir, contrast), " ...", sep=""))
+    
+    dge <- read.xlsx(file.path(outDir, contrast),
                      sheet=2, # use shrunken logFC
                      rowNames=TRUE)
     dge$padj[is.na(dge$padj)] <- 1
@@ -90,7 +103,7 @@ call_cellplot <- function(contrast) {
     main <- paste("GO enrichment ", h, " h vs. 0h labeling", sep="")
     
     filen <- paste(gsub('.xlsx', '', contrast, fixed = T), "_cellplot.pdf", sep = "")
-    pdf(file.path(dirloc.out, filen), width=12, height=8)
+    pdf(file.path(outDir, filen), width=12, height=8)
     cell.plot(x=setNames(x$LogEnrich, x$Term), 
               cells=x$log2FoldChange, 
               main=main, 
@@ -113,7 +126,4 @@ call_cellplot <- function(contrast) {
     dev.off()
 }
 
-lapply(c("time_1_vs_0.xlsx", "time_2_vs_0.xlsx", "time_4_vs_0.xlsx", "time_6_vs_0.xlsx", "time_8_vs_0.xlsx", "time_16_vs_0.xlsx"), function(data) call_cellplot(data))
-
-# call_cellplot('conversion-protocols')
-
+ll <- lapply(contrasts, function(data) call_cellplot(data))

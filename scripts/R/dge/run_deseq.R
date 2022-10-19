@@ -3,10 +3,16 @@
 # Uses output of featureCounts on "un-split" BAM files
 # to check gene expression at varying labeling times vs. 0 (unlabelled).
 
-# Usage: ./run_deseq.R [RESLOC_PULSER] [SRC]
-# 1: [RESLOC_PULSER] Results directory (pulseR)
-# 2. [SRC] pulseR script source directory
+# Usage: ./run_deseq.R [LOC] [RESLOC] [NAME] [SRC] 
+# 1: [LOC] Location of BAM files
+# 2: [RESLOC] Results directory (featureCounts for DESeq)
+# 3. [NAME] Name of input file
+# 4. [SRC] pulseR script source directory
 
+# WARNING Hard coded: update path for missing libraries...
+.libPaths( c( .libPaths(), "/beegfs/homes/eboileau/R/x86_64-pc-linux-gnu-library/4.2", "/beegfs/biosw/R/4.2.1_deb11/lib/R/library") )
+
+# WARNING Hard coded annotation org.Hs.eg.db, etc. and FRD/LFC cut-off
 
 library(DESeq2)
 library(IHW)
@@ -21,8 +27,13 @@ library(tibble)
 
 library(openxlsx)
 
-# WARNING Hard coded: update path for missing libraries...
-.libPaths( c( .libPaths(), "/beegfs/homes/eboileau/R/x86_64-pc-linux-gnu-library/4.2", "/beegfs/biosw/R/4.2.1_deb11/lib/R/library") )
+
+# get params and options
+args <- commandArgs(trailingOnly=TRUE)
+data <- "dge"
+if (length(args)<4) { stop("USAGE: plot_mismatches.R [LOC] [RESLOC] [NAME] [SRC] \n", call.=FALSE) }
+source(file.path(args[4], "utils.R", fsep=.Platform$file.sep)) 
+source(file.path(args[4], "time_pts.R", fsep=.Platform$file.sep)) 
 
 # ---------------------------------------------------------
 
@@ -89,7 +100,7 @@ get_results <- function (contrast, dds) {
              xlab = "logMeanExpr",
              ylab = "log2FoldChange",
              side.ylab = "NormalizedCount",
-             path=dirloc.out, 
+             path=outDir, 
              folder=paste("glimma-plots", num, "_vs_", denom, sep=""), 
              launch=FALSE)
 
@@ -113,7 +124,7 @@ get_results <- function (contrast, dds) {
     writeDataTable(wb, sheet=2, x=res.shrunken.tib)
     
     filen <- paste0("time_", num, "_vs_", denom, ".xlsx", sep="")
-    filen <- file.path(dirloc.out, filen, fsep=.Platform$file.sep)
+    filen <- file.path(outDir, filen, fsep=.Platform$file.sep)
     saveWorkbook(wb, filen, overwrite=TRUE)
     
 }
@@ -121,87 +132,34 @@ get_results <- function (contrast, dds) {
 
 # ---------------------------------------------------------
 
-## Call
+## call
 
-args <- commandArgs(trailingOnly=TRUE)
-data <- args[1]
+outDir <- file.path(args[2], "DESeq", "results", fsep=.Platform$file.sep)
+if (!dir.exists(outDir)) {dir.create(outDir, recursive=TRUE)}
 
-loc <- here::here("paper", "dge")
-dataDir <- file.path(loc, 'tables')
-tsv <- "-0h-1h-2h-4h-6h-8h-16h.counts.tsv"
-dataFile <- paste(data, tsv, sep="")
-print(paste("Processing ", dataFile, " ...", sep=""))
+loc <- file.path(args[2], "DESeq", fsep=.Platform$file.sep)
+tsv <- paste(data, args[3], sep="")
 
-dirloc.out <- file.path(loc, 'results')
-dir.create(dirloc.out, showWarnings=FALSE)
-print(paste("Writing to ", dirloc.out, " ...", sep=""))
+print(paste("Processing ", file.path(loc, "tables", tsv, fsep=.Platform$file.sep), " ...", sep=""))
+print(paste("Writing to ", outDir, " ...", sep=""))
 
-
-cts <- read.table(file.path(dataDir, dataFile, fsep=.Platform$file.sep), row.names=1, sep = "\t", header=TRUE, check.names=FALSE)
-cts <- cts %>% dplyr::select(starts_with("mapping"))
+# read counts and prep coldata
+cts <- read.table(file.path(loc, "tables", tsv, fsep=.Platform$file.sep), row.names=1, sep = "\t", header=TRUE, check.names=FALSE)
+cts <- cts %>% dplyr::select(starts_with(file.path(args[1], fsep=.Platform$file.sep)))
 depth <- length(strsplit(colnames(cts)[1], "/", fixed=T)[[1]])
-coldata <- data.frame(vapply(strsplit(colnames(cts), "/", fixed=T), "[", "", depth), stringsAsFactors=FALSE)
-colnames(coldata) <- "sample"
-
+conditions <- data.frame(vapply(strsplit(colnames(cts), "/", fixed=T), "[", "", depth), stringsAsFactors=FALSE)
+colnames(conditions) <- "sample"
+conditions$time <- as.numeric(gsub("h", "", vapply(strsplit(vapply(strsplit(conditions$sample, "_", fixed=T), "[", "", 3), ".", fixed=T), "[", "", 1)))
 # here we're not using time as a continuous variable e.g. to identify genes that change as a function of time
-# but rather want to compare the time points in terms of expression, so we use them as factors/contrasts
-# coldata$time <- as.numeric(gsub("h", "", vapply(strsplit(vapply(strsplit(coldata$sample, "_", fixed=T), "[", "", 3), ".", fixed=T), "[", "", 1)))
-
-if (data == 'std') {
-#     coldata$fraction <- vapply(strsplit(coldata$sample, "_", fixed=T), "[", "", 2)
-#     coldata$fraction[grepl("flow", coldata$fraction)] <- "flow_through"
-#     coldata$fraction[grepl("enriched", coldata$fraction)] <- "pull_down"
-#     coldata$time <- gsub("h", "", gsub("^.*_", "", vapply(strsplit(coldata$sample, ".", fixed=T), "[", "", 1)))
-#     coldata$time <- as.factor(coldata$time)
-#     coldata$rep <- gsub("^[1-9][0-9][0-9][0-9][0-9][0-9]", "", vapply(strsplit(coldata$sample, "_", fixed=T), "[", "", 1))
-#     coldata$rep <- as.factor(coldata$rep)
-#     coldata$sample <- gsub("[A-Z]$", "", vapply(strsplit(coldata$sample, "_", fixed=T), "[", "", 1))
-#     rownames(coldata) <- coldata$sample
-#     colnames(cts) <- coldata$sample
-# 
-#     # remove 1h time point, missing from IP A
-#     coldata <- coldata[!coldata$time=='1',]
-#     coldata$time <- droplevels(coldata$time)
-#     cts <- cts[,colnames(cts) %in% rownames(coldata)]
-# 
-#     # use "total samples"
-#     total <- cts[,colnames(cts) %in% coldata[coldata$time=='0',]$sample]
-#     colnames(total) <- c('0A', '0B')
-# 
-#     reduced <- coldata[!coldata$time=='0',]
-#     reduced$time <- droplevels(reduced$time)
-#     reduced$map <- paste(reduced$time, reduced$rep, sep='')
-#     cts <- map(unique(reduced$map), function(.id) {
-#     i <- reduced$sample[reduced$map == .id]
-#     apply(cts[,i], 1, sum)
-#     })
-# 
-#     cts <- do.call(cbind, cts)
-#     cts <- cbind(cts, total)
-#     cts <- cts[,c(7,1,2,3,8,4,5,6)]
-# 
-#     # now adjust coldata
-#     coldata$sample <- paste(coldata$time, coldata$rep, sep='')
-#     coldata <- coldata[!duplicated(coldata$sample),]
-#     coldata$time <- droplevels(coldata$time)
-#     coldata$rep <- droplevels(coldata$rep)
-#     coldata$fraction <- NULL
-#     rownames(coldata) <- coldata$sample
-# 
-#     colnames(cts) <- coldata$sample
-} else {
-
-    coldata$time <- as.numeric(gsub("h", "", vapply(strsplit(vapply(strsplit(coldata$sample, "_", fixed=T), "[", "", 3), ".", fixed=T), "[", "", 1)))
-    coldata$time <- as.factor(coldata$time)
-    coldata$rep <- gsub("WT", "", vapply(strsplit(coldata$sample, "_", fixed=T), "[", "", 2))
-    coldata$rep <- as.factor(coldata$rep)
-    coldata$sample <- gsub("[A-Z]$", "", vapply(strsplit(coldata$sample, "_", fixed=T), "[", "", 1))
-    rownames(coldata) <- coldata$sample
-    colnames(cts) <- coldata$sample
-}
-
-# remove spike-in mix and ERCC (unused)
-# we know which ones
+# but rather we want to compare labelling time points in terms of expression signatures, so we use them as factors/contrasts
+conditions$time <- as.factor(conditions$time)
+conditions$rep <- gsub("WT", "", vapply(strsplit(conditions$sample, "_", fixed=T), "[", "", 2))
+conditions$rep <- as.factor(conditions$rep)
+conditions$sample <- gsub("[A-Z]$", "", vapply(strsplit(conditions$sample, "_", fixed=T), "[", "", 1))
+rownames(conditions) <- conditions$sample
+# redefine columns
+colnames(cts) <- conditions$sample
+# remove spike-in mix and ERCC (unused) if any
 cts <- cts[grepl("^ENSG", rownames(cts)),]
 # if we use fractional counts (multimappers)
 cts <- round(cts)
@@ -213,19 +171,17 @@ expressionThreshold <- 50
 highExpr <- whichHigh(1 + cts, expressionThreshold)
 cts <- cts[highExpr,]
 
-stopifnot(all(rownames(coldata) == colnames(cts)))
+stopifnot(all(rownames(conditions) == colnames(cts)))
 
-# contrasts to test
-contrasts <- data.frame(c('1', '2', '4', '6', '8', '16'), c('0', '0', '0', '0', '0', '0'))
+# contrasts to test - based on all sets (all time points)
+allSets <- as.character(unlist(allSets))
+allSets <- allSets[!allSets==0]
+contrasts <- data.frame(allSets, rep("0", length(allSets)))
 colnames(contrasts) <- c('cond', 'ref')
-
-if (data == 'std') {
-    contrasts <- contrasts[!contrasts$cond=='1',]
-}
 
 # construct DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData=cts,
-                              colData=coldata,
+                              colData=conditions,
                               design=~time)
 
 # fit all at once
