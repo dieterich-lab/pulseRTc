@@ -25,6 +25,10 @@ def main():
 
     parser.add_argument('config', help="The yaml configuration file (full path).")
     
+    parser.add_argument('-l', '--library-type' help="""Library type s=stranded, 
+                        r=reverse-stranded, i=infer.""", choices=["s", "r", "i"],
+                        default="i")
+
     parser.add_argument('--overwrite', help="""If this flag is present, existing files 
                         will be overwritten.""", action='store_true')
 
@@ -87,6 +91,10 @@ def main():
         overwrite_str = "--overwrite"
         
     mem_str = "--mem {}".format(shlex.quote(args.mem))
+    
+    # TODO: infer library type, pass argument
+    # use only first file, check that it exists, proceed
+    # only stranded and reverse-stranded - docs must match Salmon, featureCounts, etc.
 
     for name, bam in config["samples"].items():
         

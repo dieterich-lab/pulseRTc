@@ -50,7 +50,7 @@ def get_base_vec(base, strand):
     return ','.join(idx.astype(str))
 
 
-def get_mismatches(contig, bam_file):
+def get_mismatches(contig, bam_file, lib_type):
     # Find all mismatches
     bam = ps.AlignmentFile(bam_file, "rb").fetch(contig=contig)
     bed_entries = []
@@ -58,14 +58,19 @@ def get_mismatches(contig, bam_file):
     mismatch_details_dict = defaultdict(int)
     for r in bam:
         query_id = r.query_name
-        seq = r.query_alignment_sequence
+        seq = r.query_sequence
         flag = r.flag
-        qstart = r.query_alignment_start
-        rlen = r.query_length
-        # sort strand, based on read pair for library ** RF-FIRSTSTRAND **
-        strand = '+'
-        if (r.is_read1 and not r.is_reverse) or (r.is_read2 and r.is_reverse):
-            strand = '-'
+        
+        qstart = r.query_alignment_start # <<<<<<<<<<<<<<<<< DO WE NEED THIS? FOR TRIMMING, WE JUST COUNT FROM START/END OF SEQ...
+        rlen = r.query_length # <<<<<<<<<<<<<<<<< DO WE NEED THIS? 
+        
+        rna_template = "+"
+        if lib_type == "stranded" and ((r.is_read1 and r.is_reverse) or (r.is_read2 and r.is_forward)):
+            rna_template = "-"
+        if lib_type == "reverse" and ((r.is_read1 and r.is_forward) or (r.is_read2 and r.is_reverse)):
+            rna_template = "-"
+            
+        
         # pre-filtering based on some featureCounts selected params
         # this is only for estimation of actual conversion rates
         used = True
@@ -74,27 +79,21 @@ def get_mismatches(contig, bam_file):
         # get all mismatches (in lowercase, only mismatches) - ignore INDELs
         mismatches = [m for m in r.get_aligned_pairs(with_seq=True) if m[2] and m[2].islower()]
         for m in mismatches:
-            base_qual = r.query_alignment_qualities[m[0]]
-            ref = m[2]
-            # if anti-sense, we report A->G as T->C, with strand=-
-            # reference is reversed, and base is reported accordingly in get_base_vec
-            if strand == '-':
-                ref = ref.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
             entry = {
                 'contig': contig,
                 'start': m[1],
                 'end': m[1]+1,
                 'name': query_id,
                 'score': used,
-                'strand': strand,
-                'bases11': get_base_vec(seq[m[0]], strand),
-                'ref': str(ref.upper()),
-                'base_qual': base_qual,
+                'strand': rna_template,
+                'base': seq[m[0]],
+                'ref': str(m[2].upper()),
+                'base_qual': r.query_qualities[m[0]],
                 'm_pos': m[0],
-                'qstart': qstart,
-                'rlen': rlen,
-                'read1': r.is_read1,
-                'samflag': flag,
+                'qstart': qstart, #<<<<<<<<<<????
+                'rlen': rlen, #<<<<<<<<<<????
+                'read1': r.is_read1, #<<<<<<<<<<????
+                'samflag': flag, #<<<<<<<<<<????
             }
             bed_entries.append(entry)
             
@@ -108,7 +107,20 @@ def get_mismatches(contig, bam_file):
                 genomic = m[2].upper()
                 read = seq[m[0]]
                 if r.is_read2:
+                    
+                    # TODO: how to deal with this? we need to get the max length, or specify it?
+                    
                     mpos += 100
+                    
+                # TODO: here actually wrangle how we report mismatches, depending on rna_template
+                # we need lib_type
+                
+                # e.g. for lib_type=reverse below, report mismatch as it would be found in the 
+                # read, i.e. if <-1 and +, we find a T->C, but we know it must be an A->G
+                # since read is reverse
+                
+                # and for ->2 and -, read 2 is reverse, we find A->G, but since it is on - template,
+                # we know it's a T->C
                 if (r.is_read1 and strand == '+') or (r.is_read2 and strand == '-'):
                     genomic = genomic.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
                     read = read.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
@@ -198,6 +210,10 @@ def main():
 
     parser.add_argument('name', help="""The output base name without extension.""")
     
+    parser.add_argument('-l', '--library-type' help="""Library type s=stranded, 
+                        r=reverse-stranded, i=infer.""", choices=["s", "r", "i"],
+                        default="i")
+    
     parser.add_argument('-s', '--subtract', help="""SNPs to be subtracted (GS default format)""", type=str)
     
     parser.add_argument('--vcf', help="""Use this flag if SNPs are in VCF format""", action='store_true')
@@ -285,6 +301,10 @@ def main():
         logger.warning(msg)
         return
     
+    # TODO: infer lib type if necessary
+    # files check already performed, just pick the first
+    # only stranded and reverse-stranded - docs must match Salmon, featureCounts, etc.
+    
     msg = "Getting all mismatches"
     logger.info(msg)
     
@@ -300,6 +320,10 @@ def main():
                                                      progress_bar=False,
                                                      backend='multiprocessing')
     
+    # pass library type
+    # DONE ABOVE ------------------------
+    
+    
     all_details = [a for a, b in mismatch_and_details]
     mismatch_count = get_mismatch_details(all_details, 
                                           mismatch_details_filename, 
@@ -311,6 +335,12 @@ def main():
     # get the conversion of interest
     bc = get_base_vec(args.base_change, '+')
     m_bc = all_mismatches['bases11'] == bc
+    
+    # ------------------------------------------------------------------------
+    # TODO: now ref or mismatch reported as is, with rna_template (strand)
+    # so if args T->C, need to filter for ref=T and strand=+ AND ref=A, strand=-
+    # also change m_bc as we drop get_base_vec
+    
     m_ref = all_mismatches['ref'] == args.ref_base
     all_mismatches = all_mismatches[m_ref & m_bc]
     
