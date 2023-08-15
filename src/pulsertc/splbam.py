@@ -50,8 +50,9 @@ def get_base_vec(base, strand):
     return ','.join(idx.astype(str))
 
 
+# TODO: ...
 def get_mismatches(contig, bam_file, lib_type):
-    # Find all mismatches
+    # find all mismatches
     bam = ps.AlignmentFile(bam_file, "rb").fetch(contig=contig)
     bed_entries = []
     # also add info on all mismatches

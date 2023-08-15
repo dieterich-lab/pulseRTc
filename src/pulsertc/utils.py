@@ -972,4 +972,72 @@ def fmt_convert(filen):
     df = df[['Location']]
     
     return df
+
+
+def infer_library_type(bamf, gtff, sample_size=1000):
+    '''
+    Infer library type from BAM and GTF, using a subset
+    of FLAGS:
+    
+    read paired (0x1), read mapped in proper pair (0x2), and 
+    
+    1 --> 99 mate reverse strand (0x20), first in pair (0x40) 
+    <-- 2 147 read reverse strand (0x10), second in pair (0x80)
+    <-- 1 83 read reverse strand (0x10), first in pair (0x40)
+    2 --> 163 mate reverse strand (0x20), second in pair (0x80)
+    
+    Arguments
+    ---------
+    bamf
+        String, path to BAM file
+    gtff
+        String, path to GTF
+        
+    Returns
+    -------
+    Series with counts for stranded and reverse-stranded
+    '''
+    
+    import pysam as ps
+    
+    gtf_field_names = [
+        "seqname",
+        "source",
+        "feature",
+        "start",
+        "end",
+        "score",
+        "strand",
+        "frame",
+        "attributes"
+    ]
+    
+    gtf = pd.read_csv(gtff, 
+                      sep="\t", 
+                      comment="#", 
+                      header=None, 
+                      names=gtf_field_names)
+    grouped = gtf.groupby(["feature", "strand"])
+    
+    bam = ps.AlignmentFile(bamf, "rb")
+    
+    def _get_flags(record, gtf_strand):
+        reads = bam.fetch(str(record.seqname), int(record.start), int(record.end))
+        flags = np.asarray([r.flag for r in reads])
+        if gtf_strand == "+":
+            stranded = np.logical_or(flags == 99, flags == 147).sum()
+            reverse = np.logical_or(flags == 83, flags == 163).sum()
+        else:
+            stranded = np.logical_or(flags == 83, flags == 163).sum()
+            reverse = np.logical_or(flags == 99, flags == 147).sum()
+        return stranded, reverse
+    
+    genes = grouped.get_group(('gene', '+')).head(sample_size)
+    plus = genes.apply(_get_flags, 1, gtf_strand="+")
+    plus = pd.DataFrame(plus.tolist(), columns=["stranded", "reverse"])
+    genes = grouped.get_group(('gene', '-')).head(sample_size)
+    minus = genes.apply(_get_flags, 1, gtf_strand="-")
+    minus = pd.DataFrame(minus.tolist(), columns=["stranded", "reverse"])
+    
+    return pd.concat([plus, minus]).sum()
     

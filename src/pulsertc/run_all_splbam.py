@@ -25,9 +25,23 @@ def main():
 
     parser.add_argument('config', help="The yaml configuration file (full path).")
     
-    parser.add_argument('-l', '--library-type' help="""Library type s=stranded, 
-                        r=reverse-stranded, i=infer.""", choices=["s", "r", "i"],
-                        default="i")
+    parser.add_argument('-l', '--library-type', help="""Library type: stranded, 
+                        reverse-stranded, or infer. Unstranded libraries are not 
+                        handled. GTF annotation file required if infer. Ignore inward/
+                        outward orientation. Library type is only inferred from 
+                        counts to one or the other, based on selected flags.""", type="str", 
+                        choices=["stranded", "reverse", "infer"], default="infer")
+    
+    parser.add_argument('--gtf', help="""Annotation GTF file, required if 
+                        [--library-type infer]""", type="str")
+    
+    parser.add_argument('-s', '--sample-size', help="""Sample size if 
+                        [--library-type infer]""", type=int, default=1000)
+    
+    parser.add_argument('-isize', '--insert-size', help="""For quality control only, insert 
+                        size is interpreted as sum of length of read 1 and read 2, ignoring
+                        overlap, inner distance, etc. If None, this will be inferred from
+                        the average read length.""", type=int, default=None)
 
     parser.add_argument('--overwrite', help="""If this flag is present, existing files 
                         will be overwritten.""", action='store_true')
@@ -92,10 +106,40 @@ def main():
         
     mem_str = "--mem {}".format(shlex.quote(args.mem))
     
-    # TODO: infer library type, pass argument
-    # use only first file, check that it exists, proceed
+    if args.library_type == "infer":
+        
+        if args.gtf is None:
+            msg = "Annotation file (GTF format) is required to infer library type. Terminating!"
+            logger.error(msg)
+            return
+        
+        bamf = Path(config["bamloc"], list(config['samples'].values())[0]).as_posix()
+        exist = utils.check_files_exist([bamf, args.gtf], raise_on_error=True, logger=logger)
+        
+        msg = f"Library type inferred using {bamf}, with first {sample_size} gene records " \
+              f"for each strand from {args.gtf}.\n"
+        
+        lib_counts = infer_library_type(bamf, gtff, sample_size=args.sample_size)
+        stranded = lib_counts["stranded"]
+        reverse = lib_counts["reverse"]
+        total = stranded + reverse
+        proportions = f"stranded {stranded/total*100}, reverse-stranded {reverse/total*100}"
+        margin = 0.3*max(stranded, reverse)
+        if abs(stranded-reverse) < margin:
+            msg = f"Unable to infer library type: {proportions}.\n" \
+                  f"Increase [--sample-size], or specify libray type. Terminating!"
+            logger.error(msg)
+            return
+        
+        args.library_type = "stranded"
+        if reverse > stranded:
+            args.library_type = "reverse"
+            
+        msg = f"Inferred library type is {args.library_type}, based on: {proportions}."
+        logger.warning(msg)
+    
+    # TODO: pass argument lib type
     # only stranded and reverse-stranded - docs must match Salmon, featureCounts, etc.
-
     for name, bam in config["samples"].items():
         
         bam_path = Path(config["bamloc"], bam).as_posix()
