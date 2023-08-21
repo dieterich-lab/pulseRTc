@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # Install required packages (pulseR) and additional
-# packages for DGE, GSEA, etc. 
+# packages for DGE, GSEA, etc.
 
 args = commandArgs(trailingOnly = TRUE)
 
@@ -35,6 +35,6 @@ if (length(args)>0 & args[1]=="all") {
 
 if (length(cran_pkgs) > 0)
     install.packages(cran_pkgs)
-    
+
 if (length(bioc_pkgs) > 0)
     BiocManager::install(bioc_pkgs)

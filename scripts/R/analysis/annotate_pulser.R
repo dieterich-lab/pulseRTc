@@ -8,14 +8,14 @@
 
 # Usage: ./annotate_pulser.R [RESLOC_PULSER] [SRC] [0/1] <0/1>
 # 1: [RESLOC_PULSER] Results directory (pulseR)
-# 2: [SRC] pulseR script source directory 
+# 2: [SRC] pulseR script source directory
 # 3: [0/1] 0: gene, 1: transcript annotation
 # 4: <0/1> 0: only annotate (default), 1: split estimates
 
 # WARNING Hard coded: update path for missing libraries...
 .libPaths( c( .libPaths(), "/beegfs/homes/eboileau/R/x86_64-pc-linux-gnu-library/4.2", "/beegfs/biosw/R/4.2.1_deb11/lib/R/library") )
 
-# WARNING Hard coded annotation org.Hs.eg.db, etc. 
+# WARNING Hard coded annotation org.Hs.eg.db, etc.
 
 library(dplyr)
 library(tibble)
@@ -25,7 +25,7 @@ library(org.Hs.eg.db)
 library(biomaRt)
 
 
-args <- commandArgs(trailingOnly=TRUE) 
+args <- commandArgs(trailingOnly=TRUE)
 split <- FALSE
 if (length(args)<3) {
   stop("./annotate_pulser.R [RESLOC_PULSER] [SRC] [0/1] <0/1>\n", call.=FALSE)
@@ -36,7 +36,7 @@ if (length(args)<3) {
 }
 
 src <- args[2]
-source(file.path(src, "time_pts.R", fsep=.Platform$file.sep)) 
+source(file.path(src, "time_pts.R", fsep=.Platform$file.sep))
 timeSets <- lapply(allSets, function(ts) { paste(ts, collapse="-") })
 
 # Ensembl 102
@@ -52,7 +52,7 @@ if (args[3] == 0) {
     resMArt <- getBM(attributes=c("ensembl_gene_id", "entrezgene_id", "hgnc_symbol", "ensembl_transcript_id", "transcript_biotype"), mart=mart)
 }
 
-# pulseR results 
+# pulseR results
 pulseDir <- file.path(args[1], loc, fsep=.Platform$file.sep)
 pulseFit <- "pulsefit"
 # combined output
@@ -65,7 +65,7 @@ MYC <- "ENSG00000136997"
 PDLIM5 <- "ENSG00000163110"
 GAPDH <- "ENSG00000111640"
 
-# data 
+# data
 fit <- readRDS(file.path(pulseDir, paste(pulseFit, "-", timeSets, ".rds", sep=""), fsep=.Platform$file.sep))
 rates <- fit$fit$d
 names(rates) <- rownames(fit$pd$counts)
@@ -109,7 +109,7 @@ if (isTRUE(split)) {
 # add half-lives
 annotated$half_life <- log(2)/annotated$rate
 annotated <- annotated[,c(1,3,4,5,6,2,7)]
-  
+
 library(openxlsx)
 
 workBook <- createWorkbook()

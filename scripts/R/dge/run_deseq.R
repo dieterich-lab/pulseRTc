@@ -3,7 +3,7 @@
 # Uses output of featureCounts on "un-split" BAM files
 # to check gene expression at varying labeling times vs. 0 (unlabelled).
 
-# Usage: ./run_deseq.R [LOC] [RESLOC] [NAME] [SRC] 
+# Usage: ./run_deseq.R [LOC] [RESLOC] [NAME] [SRC]
 # 1: [LOC] Location of BAM files
 # 2: [RESLOC] Results directory (featureCounts for DESeq)
 # 3. [NAME] Name of input file
@@ -32,8 +32,8 @@ library(openxlsx)
 args <- commandArgs(trailingOnly=TRUE)
 data <- "dge"
 if (length(args)<4) { stop("USAGE: plot_mismatches.R [LOC] [RESLOC] [NAME] [SRC] \n", call.=FALSE) }
-source(file.path(args[4], "utils.R", fsep=.Platform$file.sep)) 
-source(file.path(args[4], "time_pts.R", fsep=.Platform$file.sep)) 
+source(file.path(args[4], "utils.R", fsep=.Platform$file.sep))
+source(file.path(args[4], "time_pts.R", fsep=.Platform$file.sep))
 
 # ---------------------------------------------------------
 
@@ -53,67 +53,67 @@ whichHigh <- function(x, level) {
 }
 
 # DESeq results
-get_results <- function (contrast, dds) { 
+get_results <- function (contrast, dds) {
 
     num <- as.character(contrast[1])
-    denom <- as.character(contrast[2]) # reference 
+    denom <- as.character(contrast[2]) # reference
 
     print(paste("Contrast: time_", num, "_vs_", denom, sep=""))
 
     res <- results(dds,
                    contrast=c("time", num, denom),
-                   lfcThreshold=lfcThreshold.set, 
+                   lfcThreshold=lfcThreshold.set,
                    altHypothesis=altHypothesis.set,
                    alpha=alpha.set,
                    filterFun=ihw)
     res$padj[is.na(res$padj)] <- 1
-                   
+
     res$symbol <- mapIds(org.Hs.eg.db,
                          keys=rownames(res),
                          column="SYMBOL",
                          keytype="ENSEMBL",
                          multiVals="first")
 
-    res.shrunken <- lfcShrink(dds, 
-                              coef=resultsNames(dds)[grepl(paste('time_', num, '_vs_0', sep=''), resultsNames(dds))], 
+    res.shrunken <- lfcShrink(dds,
+                              coef=resultsNames(dds)[grepl(paste('time_', num, '_vs_0', sep=''), resultsNames(dds))],
                               res=res,
-                              type="apeglm", 
+                              type="apeglm",
                               lfcThreshold=lfcThreshold.set)
     res.shrunken$pvalue <- res$pvalue
     res.shrunken$padj <- res$padj
-    
+
     res.shrunken$symbol <- mapIds(org.Hs.eg.db,
                                   keys=rownames(res.shrunken),
                                   column="SYMBOL",
                                   keytype="ENSEMBL",
                                   multiVals="first")
-                         
+
     is.de <- as.numeric(res.shrunken$padj < alpha.set & abs(res.shrunken$log2FoldChange) > lfcThreshold.set)
     anno <- data.frame(GeneID=rownames(res.shrunken), symbol=res.shrunken$symbol)
-    glMDPlot(res.shrunken, 
+    glMDPlot(res.shrunken,
              counts=counts(dds ,normalized=TRUE),
              anno,
-             dds$time, 
-             samples=colnames(dds), 
-             status=is.de, 
+             dds$time,
+             samples=colnames(dds),
+             status=is.de,
              transform = FALSE,
              xlab = "logMeanExpr",
              ylab = "log2FoldChange",
              side.ylab = "NormalizedCount",
-             path=outDir, 
-             folder=paste("glimma-plots", num, "_vs_", denom, sep=""), 
+             path=outDir,
+             folder=paste("glimma-plots", num, "_vs_", denom, sep=""),
              launch=FALSE)
 
     res.tib <- res %>%
         data.frame() %>%
-        rownames_to_column(var="gene") %>% 
+        rownames_to_column(var="gene") %>%
         as_tibble()
-    
+
     res.shrunken.tib <- res.shrunken %>%
         data.frame() %>%
-        rownames_to_column(var="gene") %>% 
+        rownames_to_column(var="gene") %>%
         as_tibble()
-        
+
     # write to disk
     wb <- createWorkbook()
 
@@ -122,11 +122,11 @@ get_results <- function (contrast, dds) {
 
     addWorksheet(wb, sheetName=paste0(num, "_vs_", denom, "_shrunken", sep=""))
     writeDataTable(wb, sheet=2, x=res.shrunken.tib)
-    
+
     filen <- paste0("time_", num, "_vs_", denom, ".xlsx", sep="")
     filen <- file.path(outDir, filen, fsep=.Platform$file.sep)
     saveWorkbook(wb, filen, overwrite=TRUE)
-    
+
 }
 
 
@@ -187,5 +187,5 @@ dds <- DESeqDataSetFromMatrix(countData=cts,
 # fit all at once
 dds$time <- relevel(dds$time, ref='0')
 dds <- DESeq(dds)
-                                          
+
 apply(contrasts, 1, get_results, dds=dds)

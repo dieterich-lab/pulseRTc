@@ -12,7 +12,7 @@ SRC_DGE=R/dge
 # pre-processing ---
 # optional
 
-# sort/index bams, rename 
+# sort/index bams, rename
 get-sorted-bams:
 	$(MKCMDBASH) $(SRC_UTILS)/sortnrename $(SAMPLELIST) $(BAMLOC_0) $(BAMLOC_1) $(TMPDIR) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
@@ -67,7 +67,7 @@ RES=$(RESLOC)/tables/featureCounts/$*$(OUTPUT_FC)
 count-%:
 	$(MKCMDBASH) featureCounts $(FC_OPTS) -T $(NUM_CPUS) --tmpDir $(TMPDIR) -a $(INDEXLOC)/$(GTF) -o $(RES) $($*) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
-# read counting - Salmon	
+# read counting - Salmon
 SALMON_PATH := $(or $(SALMON_PATH),$(shell which salmon))
 GFFREAD_PATH := $(or $(GFFREAD_PATH),$(shell which gffread))
 # Salmon - generate index (if using mapping-based mode)
@@ -80,34 +80,34 @@ run-bam2fastq:
 
 # TODO: read counting - Salmon in alignment-based mode
 
-# read counting - Salmon in (quasi-)mapping-based mode 
+# read counting - Salmon in (quasi-)mapping-based mode
 run-salmon-qm:
 	$(MKCMDBASH) $(SRC_SALMON)/runsalmonqm $(SALMON_PATH) $(RESLOC) $(INDEX_SALMON) $(NUM_CPUS) $(SALMON_OPTS) > $(LOGS)/$@.$(NOW).log 2>&1 &
-	
-	
+
+
 # pulseR ---
 
 # prepare pulseR input from featureCounts tables
 prep-fc:
 	${MKCMDR} $(SRC_PULSER)/prep_fc.R $(RESLOC) $(RESLOC_PULSER) $(OUTPUT_FC) > $(LOGS)/$@.$(NOW).log 2>&1 &
 # prepare pulseR input from Salmon tables
-prep-salmon:	
+prep-salmon:
 	${MKCMDR} $(SRC_PULSER)/prep_salmon.R $(RESLOC) $(RESLOC_PULSER) > $(LOGS)/$@.$(NOW).log 2>&1 &
-	
+
 fc-counts=$(RESLOC_PULSER)/featureCounts
 salmon-counts=$(RESLOC_PULSER)/Salmon
 # all time points
-# make pulse-all-fc-counts or pulse-all-salmon-counts 
+# make pulse-all-fc-counts or pulse-all-salmon-counts
 pulse-all-%:
 	${MKCMDRLONG} $(SRC_PULSER)/fit_rtc.R $(SRC_PULSER) $($*) > $(LOGS)/$@.$(NOW).out 2>&1 &
 # subset of time points
-# make pulse-set-fc-counts or pulse-set-salmon-counts 
+# make pulse-set-fc-counts or pulse-set-salmon-counts
 pulse-set-%:
-	${MKCMDRLONG} $(SRC_PULSER)/fit_rtc.R $(SRC_PULSER) $($*) 1 > $(LOGS)/$@.$(NOW).out 2>&1 &	
-	
+	${MKCMDRLONG} $(SRC_PULSER)/fit_rtc.R $(SRC_PULSER) $($*) 1 > $(LOGS)/$@.$(NOW).out 2>&1 &
+
 
 # downstream analyses ---
-# WARNING: Some scripts have hard coded options, e.g. annotation org.Hs.eg.db, etc. or 
+# WARNING: Some scripts have hard coded options, e.g. annotation org.Hs.eg.db, etc. or
 #	   are only relevant if GRAND-SLAM results are available
 
 # get all estimates into tables and match pulseR and GRAND-SLAM results
@@ -141,4 +141,3 @@ run-dge:
 # GSEA
 run-cellplot:
 	${MKCMDR} $(SRC_DGE)/run_cellplot.R $(RESLOC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
-

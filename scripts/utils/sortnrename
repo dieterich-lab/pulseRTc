@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Usage: 
+# Usage:
 # 	sortnrename SAMPLELIST INPUT OUTPUT TMPDIR
 
 # Sort original BAM files in INPUT and write to OUTPUT using SAMPLELIST.
 # SAMPLELIST is a txt file (space separated) with 2 columns: sample_id and sample_name
-# This script assumes a certain directory structure and naming convention! 
-# It finds BAM files (Aligned.noS.bam) in directories (name contains sample_id) and rename 
+# This script assumes a certain directory structure and naming convention!
+# It finds BAM files (Aligned.noS.bam) in directories (name contains sample_id) and rename
 # files with sample_name to OUTPUT.
 
 if [[ $# -ne 4 ]]; then
@@ -27,9 +27,9 @@ fi
 #    samtools index ${NAME}
 #    echo "Done!"
 #  done < "$1"
- 
- 
-# 26.09.22  
+
+
+# 26.09.22
 # Some samples were resequenced, so we have to first sort the individual files, and merge/index them.
 # Remaining samples are handled as before.
 
@@ -48,7 +48,7 @@ while IFS=" " read -r sample name
   FILEN1=$(printf '%s\n' "${files1[@]}" | grep $sample | grep -v mate)
   FILEN2=$(printf '%s\n' "${files2[@]}" | grep $sample | grep -v mate)
   if [ -z "$FILEN2" ]
-   then 
+   then
     NAME="$3/${sample}_${name}.sorted.bam"
     echo "Processing ${FILEN1}/Aligned.noS.bam..."
     samtools sort "${FILEN1}/Aligned.noS.bam" -@24 -o ${NAME} -T "$4/${name}"
@@ -57,7 +57,7 @@ while IFS=" " read -r sample name
     samtools index ${NAME}
    else # re-sequenced
     for f in $FILEN1 $FILEN2
-     do 
+     do
       echo "Processing ${f}/Aligned.noS.bam..."
       idx1="$(cut -d'_' -f6 <<<$f)"
       NAME="$3/${sample}_${name}_${idx1}.bam"

@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/), and this 
 
 ## [0.1.0] - started 2022-09
 
-Added conda install, package, additional scripts, *etc.* 
+Added conda install, package, additional scripts, _etc._
 
 ## Added
 

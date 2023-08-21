@@ -6,7 +6,7 @@
 #SBATCH -c 1
 #SBATCH --mem=40G
 
-# Usage: 
+# Usage:
 # 	getindex GEDI GSLOC INDEXLOC FASTA GTF NAME
 
 # Create GRAND-SLAM index in GSLOC using FASTA and GTF located in INDEXLOC

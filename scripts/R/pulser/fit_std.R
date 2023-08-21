@@ -14,13 +14,13 @@ library(dplyr)
 
 
 ## Adapted from https://github.com/dieterich-lab/DesignMetabolicRNAlabeling
-## Fit the kinetic model to the read counts including total fraction at 0h, 
+## Fit the kinetic model to the read counts including total fraction at 0h,
 ## with or without ERCC spike-ins
 ## pulseR_1.0.3
 
 loc <- here::here("pulseRTc", "pulser")
 
-source(file.path(loc, "utils.R", fsep=.Platform$file.sep)) 
+source(file.path(loc, "utils.R", fsep=.Platform$file.sep))
 source(file.path(loc, "models.R", fsep=.Platform$file.sep))
 
 ## local options
@@ -35,7 +35,7 @@ use_spikes <- FALSE
 use_fit <- FALSE
 usedSets <- allSets
 modelStr <- "pulse"
-if (length(args)==1 & as.integer(args[1])==1) { 
+if (length(args)==1 & as.integer(args[1])==1) {
     use_spikes <- TRUE
     whichData <- "ercc"
 } else if (length(args)>=1) {
@@ -58,7 +58,7 @@ print(paste("Fitting ", rdsDir, " ...", sep=""))
 
 ## data
 
-# make sure "std" count data is linked under ercc if using spike-ins... 
+# make sure "std" count data is linked under ercc if using spike-ins...
 data <- getPulseData(rdsDir, refLevel="total")
 counts <- data$counts
 conditions <- data$conditions
@@ -77,33 +77,33 @@ counts <- counts[highExpr,]
 tolerance <- list(params      = 0.01,
                   normFactors = 0.01,
                   logLik      = 0.01)
-                
+
 boundaries <- list(mu          = log(c(1e-2, 1e6)),
                    d           = c(1e-3, 2),
                    size        = c(1, 1e3),
                    normFactors = c(1e-6, 20))
-                       
+
 
 if (use_spikes) {
     ## Prepare spike-ins list...
-    
+
     erccList <- rownames(counts[grep('^ERCC-', rownames(counts)),])
     print(paste("Using ", length(erccList) , " ERCC spike-ins ...", sep=""))
-    spikeIns <- list() 
+    spikeIns <- list()
     spikeIns$refGroup <- "total"
     spikeList <- list()
     spikeList$total <- list(erccList)
     spikeList$flow_through <- list(erccList)
     spikeList$pull_down <- list(erccList)
     spikeIns$spikeLists <- spikeList
-    
-    
+
+
     ## adjust
-    
+
     tolerance$normFactors <- NULL
     boundaries$normFactors <- NULL
-    
-    
+
+
     ## define function to set initial values
     # with spike-ins, normFactors are not created
     init <- function(pd, opts) {
@@ -123,15 +123,15 @@ if (use_spikes) {
         fit
     }
 
-    
+
 } else {
     ## or remove spike-ins
-    
+
     print("Fitting normFactors ... ")
     counts <- counts[!grepl("^ERCC-", rownames(counts)),]
     spikeIns <- NULL
 
-    
+
     ## define function to set initial values
     init <- function(pd, opts) {
         fit <- initParameters(list(),
@@ -151,7 +151,7 @@ if (use_spikes) {
         }
         fit
     }
-    
+
 }
 
 
@@ -179,7 +179,7 @@ fitTimePoints <- function(counts, conditions, model, init, norms, boundaries, to
   res <- getFit(tpcounts, tpconditions, model, init, norms, boundaries, tolerance, spikes)
   saveRDS(
     res,
-    sprintf(file.path(rdsDir, paste(modelStr, "fit-%s.rds", sep="")), 
+    sprintf(file.path(rdsDir, paste(modelStr, "fit-%s.rds", sep="")),
         paste(tp, collapse ="-")))
   res
 }
@@ -189,16 +189,16 @@ fitTimePoints <- function(counts, conditions, model, init, norms, boundaries, to
 res <- map(
   usedSets,
   fitTimePoints,
-  counts=counts, 
-  conditions=conditions, 
-  model=model, 
+  counts=counts,
+  conditions=conditions,
+  model=model,
   init=init,
-  norms=NULL, # for rt-con data 
-  boundaries=boundaries, 
+  norms=NULL, # for rt-con data
+  boundaries=boundaries,
   tolerance=tolerance,
   spikes=spikeIns)
 
-  
+
 ## compute confidence intervals for d
 
 cisr <- map(
@@ -215,4 +215,3 @@ cisr <- map(
         paste(tp, collapse ="-")))
     cis
   })
-  

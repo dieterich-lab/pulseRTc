@@ -6,7 +6,7 @@
 #SBATCH -c 24
 #SBATCH --mem=50G
 
-# Usage: 
+# Usage:
 #       callsnps SAMPLELIST BAMLOC DIRLOC OUTPUT INDEXLOC FASTA NUMCPUS
 
 # This script calls SNPs using BCFtools
@@ -51,4 +51,3 @@ if [ -f "$1" ]; then
 fi
 
 bcftools mpileup -Ou --threads ${NUMCPUS} -d 800 -f ${FASTA} -b ${BAMLIST} | bcftools call -mv -Ob -o "${OUTPUT}.bcf" && bcftools view -m2 -M2 --types snps -e'QUAL<40' "${OUTPUT}.bcf" -Ov -o "${OUTPUT}.snps.vcf"
-

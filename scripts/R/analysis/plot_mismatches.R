@@ -1,11 +1,11 @@
 #! /usr/bin/env Rscript
 
-# plot mismatches 
+# plot mismatches
 # we follow same nomenclature/structure as GRAND-SLAM for comparison
 
 # Usage: ./plot_mismatches.R [LOC] <1/2>
 # 1: [LOC] Input/output directory
-# 2: <1/2> 1: used mismatches (default), 2: all mismatches (does not generate mismatchpos.pdf) 
+# 2: <1/2> 1: used mismatches (default), 2: all mismatches (does not generate mismatchpos.pdf)
 
 
 library(ggplot2)
@@ -59,7 +59,7 @@ if (which) {
     # reorder
     o <- order(all.mismatches$Condition, all.mismatches$Orientation, all.mismatches$Genomic, all.mismatches$Read)
     all.mismatches <- all.mismatches[o,]
-    
+
     all.mismatches <- all.mismatches %>%
                         dplyr::mutate(Used = dplyr::coalesce(Used ,Mismatches)) %>%
                         dplyr::select(-Mismatches) %>% dplyr::rename(Mismatches=Used)
@@ -80,11 +80,11 @@ for (category in unique(all.mismatches$Category)) {
 	for (or in unique(all.mismatches$Orientation)) {
 		if (sum(all.mismatches$Category==category & all.mismatches$Orientation==or)>0) {
             print(ggplot(all.mismatches[all.mismatches$Category==category & all.mismatches$Orientation==or,],
-                  aes(Mismatch, Rate, color=Condition)) + 
-                  geom_point(position=position_dodge(width=0.7)) + 
-                  geom_errorbar(aes(ymin=Rate-se, ymax=Rate+se), alpha=0.3, position=position_dodge(width=0.7), width=0) + 
-                  theme_bw() + 
-                  theme(text=element_text(size=24), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+                  aes(Mismatch, Rate, color=Condition)) +
+                  geom_point(position=position_dodge(width=0.7)) +
+                  geom_errorbar(aes(ymin=Rate-se, ymax=Rate+se), alpha=0.3, position=position_dodge(width=0.7), width=0) +
+                  theme_bw() +
+                  theme(text=element_text(size=24), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
                   ggtitle(paste(or)))
         }
     }
@@ -94,15 +94,15 @@ for (mm in unique(all.mismatches$Mismatch)) {
 	for (or in unique(all.mismatches$Orientation)) {
 		if (sum(all.mismatches$Mismatch==mm & all.mismatches$Orientation==or)>0) {
             print(ggplot(all.mismatches[all.mismatches$Mismatch==mm & all.mismatches$Orientation==or,],
-            aes(Category, Rate, color=Condition)) + 
-            geom_point(position=position_dodge(width=0.7)) + 
-            geom_errorbar(aes(ymin=Rate-se,ymax=Rate+se), alpha=0.3, position=position_dodge(width=0.7), width=0) + 
-            theme_bw() + 
-            theme(text=element_text(size=24), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+            aes(Category, Rate, color=Condition)) +
+            geom_point(position=position_dodge(width=0.7)) +
+            geom_errorbar(aes(ymin=Rate-se,ymax=Rate+se), alpha=0.3, position=position_dodge(width=0.7), width=0) +
+            theme_bw() +
+            theme(text=element_text(size=24), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
             ggtitle(paste(mm, or)))
 		}
 	}
-}	
+}
 dev.off()
 
 if (which) {
@@ -119,20 +119,19 @@ if (which) {
     all.mismatches$Mismatch <- factor(all.mismatches$Mismatch,levels=unique(all.mismatches$Mismatch))
     all.mismatches$Rate <- all.mismatches$Mismatches/all.mismatches$Coverage
     all.mismatches$Condition <- factor(all.mismatches$Condition,as.character(unique(all.mismatches$Condition)))
-    
+
     basename <- "mismatchpos.pdf"
     pdf(file.path(outdir, basename, fsep=.Platform$file.sep), width=10, height=6)
     for (cond in unique(all.mismatches$Condition)) {
         for (category in unique(all.mismatches$Category)) {
             print(ggplot(all.mismatches[all.mismatches$Category==category & all.mismatches$Condition==cond,],
-                aes(Position, Rate, color=Read)) + 
-                geom_line() + 
-                facet_grid(~Genomic) + 
-                theme_bw() + 
-                theme(text=element_text(size=24), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+                aes(Position, Rate, color=Read)) +
+                geom_line() +
+                facet_grid(~Genomic) +
+                theme_bw() +
+                theme(text=element_text(size=24), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
                 ggtitle(cond))
         }
     }
     dev.off()
 }
-

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: 
+# Usage:
 #       reheader DIRLOC
 
 # Custom script: re-header BAM files in DIRLOC
@@ -18,6 +18,4 @@ TMP="${1}_copy"
 mv "$1" "$TMP"
 mkdir "$1"
 
-for file in $TMP/*sortdedup.bam; do samtools view -H $file | grep -vE "SIRVomeERCCome|NMD_reporter" > ${file%.*}-header.txt && samtools reheader ${file%.*}-header.txt $file > $1/$(basename "${file%.*}").bam; done && for file in $1/*.bam; do samtools index -@24 $file; done 
-
-
+for file in $TMP/*sortdedup.bam; do samtools view -H $file | grep -vE "SIRVomeERCCome|NMD_reporter" > ${file%.*}-header.txt && samtools reheader ${file%.*}-header.txt $file > $1/$(basename "${file%.*}").bam; done && for file in $1/*.bam; do samtools index -@24 $file; done

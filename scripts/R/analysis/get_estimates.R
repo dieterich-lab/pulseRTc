@@ -2,13 +2,13 @@
 
 # Combine pulseR and GRAND-SLAM estimates into common tables.
 # Compute decay rates and confidence intervals for GRAND-SLAM for the different protocols.
-# MAP estimated using matched subset of time points (pulseR), approximate CIs obtained 
+# MAP estimated using matched subset of time points (pulseR), approximate CIs obtained
 # for each subset using the calculated MAP.
 
 # Uses "gene quantification" i.e. featureCounts
 # Uses all time points fitted by pulseR (from file names)
 
-# Usage: ./get_estimates.R [RESLOC_PULSER] [BAMLOC_GS] [OUTPUT_GS] [SRC] 
+# Usage: ./get_estimates.R [RESLOC_PULSER] [BAMLOC_GS] [OUTPUT_GS] [SRC]
 # 1: [RESLOC_PULSER] Results directory (pulseR)
 # 2. [BAMLOC_GS] Results directory (GRAND-SLAM)
 # 3. [OUTPUT_GS] Name of results (GRAND-SLAM)
@@ -22,7 +22,7 @@ args <- commandArgs(trailingOnly=TRUE)
 if (length(args)<4) { stop("./get_estimates.R [RESLOC_PULSER] [BAMLOC_GS] [OUTPUT_GS] [SRC]\n", call.=FALSE) }
 
 src <- args[4]
-source(file.path(src, "utils.R", fsep=.Platform$file.sep)) 
+source(file.path(src, "utils.R", fsep=.Platform$file.sep))
 
 # GRAND-SLAM results
 gsLoc <- args[2]
@@ -31,7 +31,7 @@ gsFit <- args[3]
 gsDir <- file.path(gsLoc, "..", "tables", fsep=.Platform$file.sep)
 if (!dir.exists(gsDir)) {dir.create(gsDir, recursive=TRUE)}
 
-# pulseR results 
+# pulseR results
 pulseDir <- file.path(args[1], "featureCounts", fsep=.Platform$file.sep)
 pulseFit <- "pulsefit"
 pulseCis <- "pulsecis"
@@ -39,7 +39,7 @@ pulseCis <- "pulsecis"
 tabDir <- file.path(pulseDir, "analysis", "tables", fsep=.Platform$file.sep)
 if (!dir.exists(tabDir)) {dir.create(tabDir, recursive=TRUE)}
 
-# fitting sets 
+# fitting sets
 timeSets <- extractTimesFromNames(dir(pulseDir, pulseFit))
 # although we need names, we also need time points...
 timeSets <- lapply(timeSets, function(ts) { as.numeric(unlist(strsplit(ts, "-"))) })
@@ -101,7 +101,7 @@ gsList <- map(gsFiles, function(.id) {
 })
 
 # select for each data the matching time sets
-MAPr <- map(gsList, 
+MAPr <- map(gsList,
             function(.id) {
                 ld <- list()
                 data <- 'grandslam' # unlist(strsplit(colnames(.id)[1], "_"))[2]
@@ -115,7 +115,7 @@ MAPr <- map(gsList,
                     # uses e.g. 0h, 1h, etc.
                     # this is HARD CODED...
                     use <- paste(paste(tp, 'h', sep = ""), collapse = "|")
-                    out <- unlist(apply(as.matrix(.id), 1, mle, use=use), 
+                    out <- unlist(apply(as.matrix(.id), 1, mle, use=use),
                                   recursive = F, use.names = F)
                     cis <- unlist(out[seq(2, length(out), by=2)])
                     d[[paste(paste('GS', label), "d", sep = " ")]] <- as.numeric(out[seq(1, length(out), by=2)])
@@ -152,8 +152,8 @@ pulseList <- map(pulseFiles, function(.id) {
   cis <- readRDS(gsub(pulseFit, pulseCis, .id))
   cis <- as.data.frame(cis)
   df <- cbind(pulsedf, cis)
-  colnames(df) <- c(paste(paste("pulseR", label), "d", sep = " "), 
-                    paste(paste("pulseR", label), "d.min", sep = " "), 
+  colnames(df) <- c(paste(paste("pulseR", label), "d", sep = " "),
+                    paste(paste("pulseR", label), "d.min", sep = " "),
                     paste(paste("pulseR", label), "d.max", sep = " "))
   rownames(df) <- rownames(pulse$pd$counts)
   df
@@ -168,7 +168,7 @@ pulseNames <- map(pulseFiles, function(.id) {
 names(pulseList) <- pulseNames
 
 # match everything and write to disk
-res <- lapply(timeSets, 
+res <- lapply(timeSets,
               function(ts) {
               # pulseR
               tp <- paste(paste(ts, collapse=","), "h", sep="")
@@ -180,8 +180,8 @@ res <- lapply(timeSets,
               #g <- gsList[grep(paste("^.{1,5}", tp, "$", sep = ""), names(gsList))]
               g <- gsList[grep(paste("^", tp, sep=""), names(gsList))]
               matched <- c(p, g)
-              # first remove where d is NA (GS)    
-              matched <- map(matched, function(df) { 
+              # first remove where d is NA (GS)
+              matched <- map(matched, function(df) {
                       col <- colnames(df)[grep('min|max', colnames(df), invert=T)]
                       df[!is.na(df[[col]]),]
               })
@@ -198,7 +198,7 @@ res <- lapply(timeSets,
 resNames <- lapply(timeSets, function(ts) { paste(ts, collapse="-") })
 names(res) <- resNames
 
-             
+
 # rewrite as xlsx
 library(openxlsx)
 
@@ -206,7 +206,7 @@ workBook <- createWorkbook()
 w <- lapply(seq_along(res),
             function(.id) {
             n <- names(res)[.id]
-            r <- res[[.id]] 
+            r <- res[[.id]]
             addWorksheet(workBook, sheetName=n)
             writeDataTable(workBook, sheet=.id, x=r, rowNames = TRUE)
 })

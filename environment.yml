@@ -30,3 +30,5 @@ dependencies:
   # required for GRAND-SLAM
   #- r-reshape2
   #- r-plyr
+  # development
+  #- pre-commit
