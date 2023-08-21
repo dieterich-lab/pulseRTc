@@ -28,7 +28,7 @@ def add_logging_options(parser, default_log_file=""):
 
     default_log_file = ""
     logging_level_choices = ['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-    default_logging_level = 'WARNING'
+    default_logging_level = 'INFO'
     default_specific_logging_level = 'NOTSET'
 
     logging_options.add_argument('--log-file', help="This option specifies a file to "
@@ -974,7 +974,7 @@ def fmt_convert(filen):
     return df
 
 
-def infer_library_type(bamf, gtff, sample_size=1000):
+def infer_library_type(bamf, gtff, sample_size=1000, margin=0.3):
     '''
     Infer library type from BAM and GTF, using a subset
     of FLAGS:
@@ -992,10 +992,14 @@ def infer_library_type(bamf, gtff, sample_size=1000):
         String, path to BAM file
     gtff
         String, path to GTF
+    sample_size
+        Integer
+    margin
+        Float
         
     Returns
     -------
-    Series with counts for stranded and reverse-stranded
+    Library type
     '''
     
     import pysam as ps
@@ -1039,5 +1043,64 @@ def infer_library_type(bamf, gtff, sample_size=1000):
     minus = genes.apply(_get_flags, 1, gtf_strand="-")
     minus = pd.DataFrame(minus.tolist(), columns=["stranded", "reverse"])
     
-    return pd.concat([plus, minus]).sum()
+    lib_counts = pd.concat([plus, minus]).sum()
+    stranded = lib_counts["stranded"]
+    reverse = lib_counts["reverse"]
+    total = stranded + reverse
+    proportions = f"stranded {stranded/total*100}, reverse-stranded {reverse/total*100}"
     
+    if abs(stranded-reverse) < margin*max(stranded, reverse):
+        msg = f"Unable to infer library type: {proportions}.\n" \
+              f"Increase [--sample-size], or specify libray type. Terminating!"
+        logger.warning(msg)
+        return
+        
+    library_type = "stranded"
+    if reverse > stranded:
+        library_type = "reverse"
+        
+    msg = f"Inferred library type is {library_type}, based on: {proportions}. " \
+          f"Check for consistency with featureCounts and/or Salmon options!"
+    logger.info(msg)
+    
+    return library_type
+
+
+def infer_read_length(bamf, sample_size=1000):
+    '''
+    Infer read length
+    
+    Arguments
+    ---------
+    bamf
+        String, path to BAM file
+    sample_size
+        Integer
+        
+    Returns
+    -------
+    Insert size (read length X 2)
+    '''
+    
+    from math import sqrt
+    from itertools import islice
+    
+    bam = ps.AlignmentFile(bamf, "rb")
+    l = list(islice((r.query_length for r in bam if is_used(r)), sample_size))
+    mean = float(sum(l)) / len(l)
+    sdev = sqrt(float(sum([(x - mean)**2 for x in l])) / (len(l) - 1))
+    
+    msg = f"Read length distribution of {bamf}, based on {sample_size} reads " \
+          f"Mean: {mean}, SD: {sdev}."
+    logger.info(msg)
+    
+    return int(round(mean + sdev, -2))
+    
+    
+def is_used(read):
+    return (read.is_paired and
+            read.is_proper_pair and
+            not read.is_supplementary and
+            not read.is_unmapped and
+            not read.mate_is_unmapped)
+

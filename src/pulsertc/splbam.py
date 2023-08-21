@@ -38,102 +38,74 @@ default_num_cpus = 1
 default_mem = '80G'
 
 
-def get_base_vec(base, strand):
-    # report mismatch following JACUSA output - w/o coverage
-    base = str(base).upper()
-    vec=['A', 'C', 'G', 'T', base]
-    vec.sort()
-    idx = np.array([0]*4)
-    idx[vec.index(base)] = 1
-    if strand == '-':
-        idx = idx[::-1]
-    return ','.join(idx.astype(str))
 
 
-# TODO: ...
-def get_mismatches(contig, bam_file, lib_type):
-    # find all mismatches
+def get_mismatches(contig, bam_file, lib_type, offset):
+    '''
+    Find mismatches and report all aligned pairs
+    '''
+    
     bam = ps.AlignmentFile(bam_file, "rb").fetch(contig=contig)
     bed_entries = []
-    # also add info on all mismatches
-    mismatch_details_dict = defaultdict(int)
+    aligned_pairs_dict = defaultdict(int)
+    
     for r in bam:
-        query_id = r.query_name
-        seq = r.query_sequence
-        flag = r.flag
-        
-        qstart = r.query_alignment_start # <<<<<<<<<<<<<<<<< DO WE NEED THIS? FOR TRIMMING, WE JUST COUNT FROM START/END OF SEQ...
-        rlen = r.query_length # <<<<<<<<<<<<<<<<< DO WE NEED THIS? 
-        
         rna_template = "+"
         if lib_type == "stranded" and ((r.is_read1 and r.is_reverse) or (r.is_read2 and r.is_forward)):
             rna_template = "-"
         if lib_type == "reverse" and ((r.is_read1 and r.is_forward) or (r.is_read2 and r.is_reverse)):
             rna_template = "-"
-            
         
-        # pre-filtering based on some featureCounts selected params
-        # this is only for estimation of actual conversion rates
-        used = True
-        if r.is_supplementary or r.is_unmapped or r.mate_is_unmapped or not r.is_proper_pair:
-            used = False
-        # get all mismatches (in lowercase, only mismatches) - ignore INDELs
-        mismatches = [m for m in r.get_aligned_pairs(with_seq=True) if m[2] and m[2].islower()]
-        for m in mismatches:
-            entry = {
-                'contig': contig,
-                'start': m[1],
-                'end': m[1]+1,
-                'name': query_id,
-                'score': used,
-                'strand': rna_template,
-                'base': seq[m[0]],
-                'ref': str(m[2].upper()),
-                'base_qual': r.query_qualities[m[0]],
-                'm_pos': m[0],
-                'qstart': qstart, #<<<<<<<<<<????
-                'rlen': rlen, #<<<<<<<<<<????
-                'read1': r.is_read1, #<<<<<<<<<<????
-                'samflag': flag, #<<<<<<<<<<????
-            }
-            bed_entries.append(entry)
+        # only for estimation of conversion rates
+        # read filtering done during abundance estimation (featureCounts and/or Salmon options)
+        used = utils.is_used(r)
             
-        # mismatchdetails
-        # but we skip unused reads
-        if used:
-            # For inserts, deletions, skipping either query or reference position may be None
-            mismatches = [m for m in r.get_aligned_pairs(with_seq=True) if m[0] and m[2]]
-            for m in mismatches:
-                mpos = m[0]
-                genomic = m[2].upper()
-                read = seq[m[0]]
+        # only matched bases are returned - no None on either side
+        aligned_pairs = r.get_aligned_pairs(with_seq=True, matches_only=True)
+        for aligned_pair in aligned_pairs:
+            mpos = aligned_pair[0]
+            ref = aligned_pair[2].upper()
+            base = r.query_sequence[aligned_pair[0]]
+            # mismatches in lowercase
+            if aligned_pair[2].islower():
+                entry = {
+                    'contig': contig,
+                    'start': aligned_pair[1],
+                    'end': aligned_pair[1]+1,
+                    'name': r.query_name,
+                    'score': used, 
+                    'strand': rna_template,
+                    'base': base if rna_template == "+" else base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx")),
+                    'ref': ref if rna_template == "+" else ref.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx")),
+                    'base_qual': r.query_qualities[aligned_pair[0]],
+                    'm_pos': mpos,
+                    'rlen': r.query_length,
+                    'read1': r.is_read1,
+                    'samflag': r.flag,
+                }
+                bed_entries.append(entry)
+                
+            # report aligned pairs in a way that is consistent
+            # with the read orientation
+            if used:
+                if r.is_reverse:
+                    ref = ref.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
+                    base = base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
+                # shift position of read 2 
                 if r.is_read2:
-                    
-                    # TODO: how to deal with this? we need to get the max length, or specify it?
-                    
-                    mpos += 100
-                    
-                # TODO: here actually wrangle how we report mismatches, depending on rna_template
-                # we need lib_type
-                
-                # e.g. for lib_type=reverse below, report mismatch as it would be found in the 
-                # read, i.e. if <-1 and +, we find a T->C, but we know it must be an A->G
-                # since read is reverse
-                
-                # and for ->2 and -, read 2 is reverse, we find A->G, but since it is on - template,
-                # we know it's a T->C
-                if (r.is_read1 and strand == '+') or (r.is_read2 and strand == '-'):
-                    genomic = genomic.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
-                    read = read.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
-                key = '{}:{}:{}'.format(genomic, read, mpos)
-                mismatch_details_dict[key] += 1    
+                    mpos += offset
+                key = '{}:{}:{}'.format(ref, base, mpos)
+                aligned_pairs_dict[key] += 1    
             
     bed = pd.DataFrame(bed_entries)
     
-    return (mismatch_details_dict, bed)
+    return (aligned_pairs_dict, bed)
 
 
-def get_mismatch_details(details, filename1, filename2):   
+def get_mismatch_details(details, filename1, filename2, offset):   
+    '''
+    Wrangle all aligned pairs per read for quality control
+    '''
     
     # first sort mismatch details list of dict into one dict
     mismatch_details = defaultdict(int) 
@@ -158,11 +130,11 @@ def get_mismatch_details(details, filename1, filename2):
             continue
         cov = coverage['{}:{}'.format(genomic, pos)]
         e = {'Category': 'Any',
-            'Genomic': genomic, 
-            'Read': read,
-            'Position': int(pos),
-            'Coverage': cov,
-            'Mismatches': val}
+             'Genomic': genomic, 
+             'Read': read,
+             'Position': int(pos),
+             'Coverage': cov,
+             'Mismatches': val}
         sl.append(e)
     mismatch_details_df = pd.DataFrame(sl)
     mismatch_details_df = mismatch_details_df[['Category', 'Genomic', 'Read', 'Position', 'Coverage', 'Mismatches']]
@@ -173,8 +145,8 @@ def get_mismatch_details(details, filename1, filename2):
                                compression='gzip')
     
     # now sum everything to get overall` mismatches, but split by read
-    mismatch_details_df.loc[mismatch_details_df['Position']<100, 'Orientation'] = 'First'
-    mismatch_details_df.loc[mismatch_details_df['Position']>99, 'Orientation'] = 'Second'
+    mismatch_details_df.loc[mismatch_details_df['Position']<offset, 'Orientation'] = 'First'
+    mismatch_details_df.loc[mismatch_details_df['Position']>=offset, 'Orientation'] = 'Second'
     
     cov = mismatch_details_df[['Genomic', 'Orientation', 'Coverage']].drop_duplicates().groupby(['Genomic', 'Orientation']).sum()
     cov = pd.DataFrame(cov.to_records())
@@ -201,7 +173,8 @@ def main():
                                      a SLAM/TUC/TL-seq experiment into labelled/unlabelled BAM files.
                                      Requires the MD tag. All reads are kept incl. unmapped, 
                                      secondary/supplementary, etc. these can be filtered out when 
-                                     counting (featureCounts). Optionally, SNPs can be subtracted.""")
+                                     counting (featureCounts/Salmon). Optionally, SNPs can be subtracted.
+                                     This scripts also does a lot of wrangling to estimate conversion rates.""")
 
     parser.add_argument('bam', help="""The input BAM file (full path).""")
 
@@ -211,9 +184,23 @@ def main():
 
     parser.add_argument('name', help="""The output base name without extension.""")
     
-    parser.add_argument('-l', '--library-type' help="""Library type s=stranded, 
-                        r=reverse-stranded, i=infer.""", choices=["s", "r", "i"],
-                        default="i")
+    parser.add_argument('-l', '--library-type', help="""Library type: stranded, 
+                        reverse-stranded, or infer. Unstranded libraries are not 
+                        handled. GTF annotation file required if infer. Ignore inward/
+                        outward orientation. Library type is only inferred from 
+                        counts to one or the other, based on selected flags.""", type=str, 
+                        choices=["stranded", "reverse", "infer"], default="infer")
+    
+    parser.add_argument('-a', '--gtf', help="""Annotation GTF file, required if 
+                        [--library-type infer]""", type=str)
+    
+    parser.add_argument('-ssize', '--sample-size', help="""Sample size if 
+                        [--library-type infer]""", type=int, default=1000)
+    
+    parser.add_argument('-isize', '--insert-size', help="""For quality control only, insert 
+                        size is interpreted as sum of length of read 1 and read 2, ignoring
+                        overlap, inner distance, etc. If None, this will be inferred from
+                        the average read length.""", type=int, default=None)
     
     parser.add_argument('-s', '--subtract', help="""SNPs to be subtracted (GS default format)""", type=str)
     
@@ -254,7 +241,7 @@ def main():
         cmd = "{}".format(' '.join(shlex.quote(s) for s in sys.argv))
         utils.check_sbatch(cmd, args=args)
         return
-    
+        
     # check output path
     exist = utils.check_files_exist([args.outdir_bam, args.outdir_mm], 
                                     raise_on_error=True, 
@@ -264,6 +251,15 @@ def main():
     input_files = [args.bam]
     if args.subtract:
         input_files.append(args.subtract)
+        
+    if args.library_type == "infer":
+    
+        if args.gtf is None:
+            msg = "Annotation file (GTF format) is required to infer library type. Terminating!"
+            logger.error(msg)
+            return
+        input_files.append(args.gtf)
+        
     exist = utils.check_files_exist(input_files, 
                                     raise_on_error=True, 
                                     logger=logger)
@@ -302,9 +298,18 @@ def main():
         logger.warning(msg)
         return
     
-    # TODO: infer lib type if necessary
-    # files check already performed, just pick the first
-    # only stranded and reverse-stranded - docs must match Salmon, featureCounts, etc.
+    # infer library type
+    if args.library_type == "infer":
+        msg = f"Library type inferred using {args.bam}, with first {args.sample_size} gene records " \
+                f"for each strand from {args.gtf}.\n"
+        
+        args.library_type = utils.infer_library_type(args.bam, args.gtf, sample_size=args.sample_size)
+        if args.library_type is None:
+            return
+        
+    # infer read length - for quality control
+    if args.insert_size is None:
+        args.insert_size = utils.infer_read_length(args.bam, sample_size=args.sample_size)*2
     
     msg = "Getting all mismatches"
     logger.info(msg)
@@ -314,39 +319,32 @@ def main():
     SN = (SQ['SN'] for SQ in bam.header['SQ'])
     bam.close()
 
-    mismatch_and_details = utils.apply_parallel_iter(SN,
-                                                     args.num_cpus,
-                                                     get_mismatches,
-                                                     args.bam,
-                                                     progress_bar=False,
-                                                     backend='multiprocessing')
+    mismatch_and_aligned_pairs = utils.apply_parallel_iter(SN,
+                                                           args.num_cpus,
+                                                           get_mismatches,
+                                                           args.bam,
+                                                           args.library_type,
+                                                           args.insert_size/2,
+                                                           progress_bar=False,
+                                                           backend='multiprocessing')
     
-    # pass library type
-    # DONE ABOVE ------------------------
-    
-    
-    all_details = [a for a, b in mismatch_and_details]
-    mismatch_count = get_mismatch_details(all_details, 
+    # use all aligned pairs to estimate conversion rates/mismatch ratios
+    # this should be rewritten...
+    aligned_pairs = [a for a, b in mismatch_and_aligned_pairs]
+    mismatch_count = get_mismatch_details(aligned_pairs, 
                                           mismatch_details_filename, 
                                           mismatch_filename)
     
-    all_mismatches = [b for a, b in mismatch_and_details]
+    all_mismatches = [b for a, b in mismatch_and_aligned_pairs]
     all_mismatches = pd.concat(all_mismatches)
     
     # get the conversion of interest
-    bc = get_base_vec(args.base_change, '+')
-    m_bc = all_mismatches['bases11'] == bc
-    
-    # ------------------------------------------------------------------------
-    # TODO: now ref or mismatch reported as is, with rna_template (strand)
-    # so if args T->C, need to filter for ref=T and strand=+ AND ref=A, strand=-
-    # also change m_bc as we drop get_base_vec
-    
     m_ref = all_mismatches['ref'] == args.ref_base
+    m_bc = all_mismatches['base'] == args.base_change
     all_mismatches = all_mismatches[m_ref & m_bc]
     
     # filter base quality - no offset of 33 needs to be subtracted
-    m_qual = all_mismatches['base_qual']>=args.base_qual
+    m_qual = all_mismatches['base_qual'] >= args.base_qual
     
     # below we keep track of discarded mismatches to adjust rates
     discarded = all_mismatches[~m_qual].copy()
@@ -358,8 +356,8 @@ def main():
     all_mismatches = all_mismatches[m_qual]
     
     # discard mismatches found at read ends
-    m_trim5p = all_mismatches['m_pos'] < (args.trim5p - all_mismatches['qstart'])
-    m_trim3p = all_mismatches['m_pos'] >= (all_mismatches['rlen'] - args.trim3p)
+    m_trim5p = all_mismatches['m_pos'] < args.trim5p
+    m_trim3p = all_mismatches['m_pos'] > (all_mismatches['rlen'] - args.trim3p)
     discarded = all_mismatches[m_trim5p | m_trim3p].copy()
     m = (discarded['read1']==True) & (discarded['score']==True)
     discarded_first += discarded[m].shape[0]
@@ -388,9 +386,18 @@ def main():
         all_mismatches = all_mismatches[~all_mismatches.Location.isin(snps)]
     
     # adjust final mismatch counts
-    m = (mismatch_count.Orientation=='First') & (mismatch_count.Genomic=='A') & (mismatch_count.Read=='G')
+    # if stranded, read 1 is in the same direction as RNA template, and vice versa
+    m_read1 = (mismatch_count.Genomic==args.ref_base) & (mismatch_count.Read==args.base_change)
+    m_read2 = ((mismatch_count.Genomic==args.ref_base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))) &
+               (mismatch_count.Read==args.base_change.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))))
+    if args.library_type == "reverse":
+        m_read2 = (mismatch_count.Genomic==args.ref_base) & (mismatch_count.Read==args.base_change)
+        m_read1 = ((mismatch_count.Genomic==args.ref_base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))) &
+               (mismatch_count.Read==args.base_change.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))))
+        
+    m = (mismatch_count.Orientation=='First') & m_read1
     mismatch_count.loc[m, 'Mismatches'] = mismatch_count.loc[m, 'Mismatches'] - discarded_first
-    n = (mismatch_count.Orientation=='Second') & (mismatch_count.Genomic=='T') & (mismatch_count.Read=='C')
+    n = (mismatch_count.Orientation=='Second') & m_read2
     mismatch_count.loc[n, 'Mismatches'] = mismatch_count.loc[n, 'Mismatches'] - discarded_second
     mismatch_count = mismatch_count[m | n]
     mismatch_count.to_csv(mismatch_filename_final,
@@ -400,7 +407,8 @@ def main():
         
     # what remains are true conversions, other reads are classified as unlabelled
     # NOTE: we keep all query_name for which at least one read has a mismatch
-    # this include read pairs, but also multi-mapping reads
+    # this include read pairs, but also multi-mapping reads...
+    # in practice, we filter them at the abundance estimation step...
     true_conversions = all_mismatches.name.unique()
     
     # now split the BAM file
