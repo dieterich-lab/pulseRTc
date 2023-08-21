@@ -62,7 +62,7 @@ def get_mismatches(contig, bam_file, lib_type, offset):
         # only matched bases are returned - no None on either side
         aligned_pairs = r.get_aligned_pairs(with_seq=True, matches_only=True)
         for aligned_pair in aligned_pairs:
-            mpos = aligned_pair[0]
+            pos = aligned_pair[0]
             ref = aligned_pair[2].upper()
             base = r.query_sequence[aligned_pair[0]]
             # mismatches in lowercase
@@ -81,7 +81,7 @@ def get_mismatches(contig, bam_file, lib_type, offset):
                     if rna_template == "+"
                     else ref.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx")),
                     "base_qual": r.query_qualities[aligned_pair[0]],
-                    "m_pos": mpos,
+                    "pos": pos,
                     "rlen": r.query_length,
                     "read1": r.is_read1,
                     "samflag": r.flag,
@@ -96,8 +96,8 @@ def get_mismatches(contig, bam_file, lib_type, offset):
                     base = base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
                 # shift position of read 2
                 if r.is_read2:
-                    mpos += offset
-                key = "{}:{}:{}".format(ref, base, mpos)
+                    pos += offset
+                key = "{}:{}:{}".format(ref, base, pos)
                 aligned_pairs_dict[key] += 1
 
     bed = pd.DataFrame(bed_entries)
@@ -404,6 +404,7 @@ def main():
         args.insert_size = (
             utils.infer_read_length(args.bam, sample_size=args.sample_size) * 2
         )
+    offset = int(args.insert_size / 2)
 
     msg = "Getting all mismatches"
     logger.info(msg)
@@ -419,7 +420,7 @@ def main():
         get_mismatches,
         args.bam,
         args.library_type,
-        args.insert_size / 2,
+        offset,
         progress_bar=False,
         backend="multiprocessing",
     )
@@ -428,7 +429,7 @@ def main():
     # this should be rewritten...
     aligned_pairs = [a for a, b in mismatch_and_aligned_pairs]
     mismatch_count = get_mismatch_details(
-        aligned_pairs, mismatch_details_filename, mismatch_filename
+        aligned_pairs, mismatch_details_filename, mismatch_filename, offset
     )
 
     all_mismatches = [b for a, b in mismatch_and_aligned_pairs]
@@ -452,8 +453,8 @@ def main():
     all_mismatches = all_mismatches[m_qual]
 
     # discard mismatches found at read ends
-    m_trim5p = all_mismatches["m_pos"] < args.trim5p
-    m_trim3p = all_mismatches["m_pos"] > (all_mismatches["rlen"] - args.trim3p)
+    m_trim5p = all_mismatches["pos"] < args.trim5p
+    m_trim3p = all_mismatches["pos"] > (all_mismatches["rlen"] - args.trim3p)
     discarded = all_mismatches[m_trim5p | m_trim3p].copy()
     m = discarded["read1"] & discarded["score"]
     discarded_first += discarded[m].shape[0]
@@ -522,7 +523,7 @@ def main():
 
     # what remains are true conversions, other reads are classified as unlabelled
     # NOTE: we keep all query_name for which at least one read has a mismatch
-    # this include read pairs, but also multi-mapping reads...
+    # this include read pairs, but also multi-mapping reads (not primary)...
     # in practice, we filter them at the abundance estimation step...
     true_conversions = all_mismatches.name.unique()
 
