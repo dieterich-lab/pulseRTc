@@ -45,13 +45,20 @@ def get_mismatches(contig, bam_file, lib_type, offset):
     aligned_pairs_dict = defaultdict(int)
 
     for r in bam:
+        rname = r.query_name
+        rlen = r.query_length
+        qual = r.query_qualities
+        flag = r.flag
+
         rna_template = "+"
         if lib_type == "stranded" and (
-            (r.is_read1 and r.is_reverse) or (r.is_read2 and r.is_forward)
+            (r.is_read1 and r.is_reverse)
+            or (r.is_read2 and r.is_forward)  # pair is anti-sense
         ):
             rna_template = "-"
         if lib_type == "reverse" and (
-            (r.is_read1 and r.is_forward) or (r.is_read2 and r.is_reverse)
+            (r.is_read1 and r.is_forward)
+            or (r.is_read2 and r.is_reverse)  # pair is sense
         ):
             rna_template = "-"
 
@@ -66,12 +73,14 @@ def get_mismatches(contig, bam_file, lib_type, offset):
             ref = aligned_pair[2].upper()
             base = r.query_sequence[aligned_pair[0]]
             # mismatches in lowercase
+            # report mismatches in a way that is consistent with the RNA template
+            # pos/qualities are the aligned position/qualities
             if aligned_pair[2].islower():
                 entry = {
                     "contig": contig,
                     "start": aligned_pair[1],
                     "end": aligned_pair[1] + 1,
-                    "name": r.query_name,
+                    "name": rname,
                     "score": used,
                     "strand": rna_template,
                     "base": base
@@ -80,21 +89,24 @@ def get_mismatches(contig, bam_file, lib_type, offset):
                     "ref": ref
                     if rna_template == "+"
                     else ref.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx")),
-                    "base_qual": r.query_qualities[aligned_pair[0]],
+                    "base_qual": qual[aligned_pair[0]],
                     "pos": pos,
-                    "rlen": r.query_length,
+                    "rlen": rlen,
                     "read1": r.is_read1,
-                    "samflag": r.flag,
+                    "samflag": flag,
                 }
                 bed_entries.append(entry)
 
             # report aligned pairs in a way that is consistent
-            # with the read orientation
+            # with the read orientation/protocol at sequencing - for quality control
+            # i.e. reverse-complement (base-wise, adjusting position)
             if used:
                 if r.is_reverse:
                     ref = ref.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
                     base = base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
+                    pos = rlen - (pos + 1)
                 # shift position of read 2
+                # ignore possible overlap e.g. R1 longer than offset, etc.
                 if r.is_read2:
                     pos += offset
                 key = "{}:{}:{}".format(ref, base, pos)

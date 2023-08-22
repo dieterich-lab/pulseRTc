@@ -1143,6 +1143,11 @@ def infer_library_type(bamf, gtff, sample_size=1000, margin=0.3):
     <-- 1 83 read reverse strand (0x10), first in pair (0x40)
     2 --> 163 mate reverse strand (0x20), second in pair (0x80)
 
+    i.e. 99-147 read pair = sense (defined by R1)
+    and 83-163 read pair = anti-sense (defined by R1)
+    For stranded, sense pairs map to +, and anti-sense pairs to -,
+    for reverse-stranded, sense pairs map to -, and anti-sense pairs to +.
+
     Arguments
     ---------
     bamf
