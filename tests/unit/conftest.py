@@ -9,6 +9,15 @@ class mockParser:
     def parse_args(self):
         self.overwrite = True
         self.do_not_call = False
+        self.ref_base = "T"
+        self.base_change = "C"
+        self.qual = 20
+        self.trim5p = 5
+        self.trim3p = 5
+        self.subtract = False
+        self.library_type = "reverse"
+        self.offset = 100
+        self.num_cpus = 1
 
 
 class BAMData:
@@ -130,7 +139,14 @@ class BAMData:
 
 
 @pytest.fixture(scope="session")
-def get_bam(tmp_path_factory):
+def get_args():
+    args = mockParser()
+    args.parse_args()
+    return args
+
+
+@pytest.fixture(scope="session")
+def get_bam(tmp_path_factory, get_args):
 
     """\
     Create test BAM file.
@@ -195,8 +211,48 @@ def get_bam(tmp_path_factory):
             a.tags = tag
             outf.write(a)
 
-    args = mockParser()
-    args.parse_args()
-    index_bam_file(bamf.as_posix(), args)
+    index_bam_file(bamf.as_posix(), get_args)
 
     return bamf.as_posix()
+
+
+@pytest.fixture(scope="session")
+def get_mismatches(get_bam, get_args):
+
+    """\
+    Call get_mismatches
+
+    Parameters
+    ----------
+    get_bam
+        BAM file
+
+    Returns
+    -------
+    aligned pairs and mismatches
+    """
+    import pysam as ps
+
+    from pulsertc.utils import apply_parallel_iter
+    from pulsertc.splbam import get_mismatches
+
+    num_cpus = get_args.num_cpus
+    library_type = get_args.library_type
+    offset = get_args.offset
+
+    bam = ps.AlignmentFile(get_bam, "rb")
+    SN = (SQ["SN"] for SQ in bam.header["SQ"])
+    bam.close()
+
+    mismatch_and_aligned_pairs = apply_parallel_iter(
+        SN,
+        num_cpus,
+        get_mismatches,
+        get_bam,
+        library_type,
+        offset,
+        progress_bar=False,
+        backend="multiprocessing",
+    )
+
+    return mismatch_and_aligned_pairs

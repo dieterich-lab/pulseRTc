@@ -35,6 +35,14 @@ default_num_cpus = 1
 default_mem = "80G"
 
 
+def unwrap_tuple_list(l, idx=0, concat=False):
+    ret = [t[idx] for t in l]
+    if concat:
+        ret = pd.concat(ret)
+        ret.reset_index(inplace=True, drop=True)
+    return ret
+
+
 def get_mismatches(contig, bam_file, lib_type, offset):
     """
     Find mismatches and report all aligned pairs
@@ -89,7 +97,7 @@ def get_mismatches(contig, bam_file, lib_type, offset):
                     "ref": ref
                     if rna_template == "+"
                     else ref.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx")),
-                    "base_qual": qual[aligned_pair[0]],
+                    "qual": qual[aligned_pair[0]],
                     "pos": pos,
                     "rlen": rlen,
                     "read1": r.is_read1,
@@ -161,6 +169,7 @@ def get_mismatch_details(details, filename1, filename2, offset):
     mismatch_details_df.to_csv(filename1, sep="\t", index=False, compression="gzip")
 
     # now sum everything to get overall` mismatches, but split by read
+    # however see above, end/start may be wrong is e.g. R1 is longer than offset...
     mismatch_details_df.loc[
         mismatch_details_df["Position"] < offset, "Orientation"
     ] = "First"
@@ -189,10 +198,101 @@ def get_mismatch_details(details, filename1, filename2, offset):
         ["Category", "Orientation", "Genomic", "Read", "Coverage", "Mismatches"]
     ]
     mismatches_counts.sort_values(by=["Orientation", "Genomic", "Read"], inplace=True)
+    mismatches_counts.reset_index(inplace=True, drop=True)
 
     mismatches_counts.to_csv(filename2, sep="\t", index=False, compression="gzip")
 
     return mismatches_counts
+
+
+def filter_mismatches(df, count, filename, args):
+    """\
+    Apply filters (selected conversion, base
+    quality, etc.)
+    Adjust mismatch counts for quality control
+    """
+
+    # get the conversion of interest
+    m_ref = df["ref"] == args.ref_base
+    m_bc = df["base"] == args.base_change
+    df = df[m_ref & m_bc]
+
+    # filter base quality - no offset of 33 needs to be subtracted
+    m_qual = df["qual"] >= args.qual
+
+    # keep track of discarded mismatches to adjust rates
+    discarded = df[~m_qual].copy()
+    m = discarded["read1"] & discarded["score"]
+    discarded_first = discarded[m].shape[0]
+    m = ~discarded["read1"] & discarded["score"]
+    discarded_second = discarded[m].shape[0]
+
+    df = df[m_qual]
+
+    # discard mismatches found at read ends
+    # NOTE: this is done using the "mapped position", incl. soff-clipped bases
+    # i.e. not to be confused with "standard" read trimming
+    m_trim5p = df["pos"] < args.trim5p
+    m_trim3p = df["pos"] > (df["rlen"] - args.trim3p)
+    discarded = df[m_trim5p | m_trim3p].copy()
+    m = discarded["read1"] & discarded["score"]
+    discarded_first += discarded[m].shape[0]
+    m = ~discarded["read1"] & discarded["score"]
+    discarded_second += discarded[m].shape[0]
+
+    df = df[~m_trim5p & ~m_trim3p]
+
+    # remove all SNPs from what remains
+    if args.subtract:
+        # currently GRAND-SLAM snpdata default format
+        if args.vcf:
+            snps = utils.fmt_convert(args.subtract)
+        else:
+            snps = pd.read_csv(args.subtract, sep="\t")
+        snps = snps.Location.unique()
+        # add field
+        df["Location"] = df[["contig", "start"]].apply(
+            lambda x: ":".join([str(s) for s in x]), axis=1
+        )
+
+        discarded = df[df.Location.isin(snps)].copy()
+        m = discarded["read1"] & discarded["score"]
+        discarded_first += discarded[m].shape[0]
+        m = ~discarded["read1"] & discarded["score"]
+        discarded_second += discarded[m].shape[0]
+
+        df = df[~df.Location.isin(snps)]
+
+    df.reset_index(inplace=True, drop=True)
+
+    # adjust final mismatch counts
+    # if stranded, read 1 is in the same direction as RNA template, and vice versa
+    m_read1 = (count.Genomic == args.ref_base) & (count.Read == args.base_change)
+    m_read2 = (
+        count.Genomic
+        == args.ref_base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
+    ) & (
+        count.Read
+        == args.base_change.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
+    )
+    if args.library_type == "reverse":
+        m_read2 = (count.Genomic == args.ref_base) & (count.Read == args.base_change)
+        m_read1 = (
+            count.Genomic
+            == args.ref_base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
+        ) & (
+            count.Read
+            == args.base_change.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
+        )
+
+    m = (count.Orientation == "First") & m_read1
+    count.loc[m, "Mismatches"] = count.loc[m, "Mismatches"] - discarded_first
+    n = (count.Orientation == "Second") & m_read2
+    count.loc[n, "Mismatches"] = count.loc[n, "Mismatches"] - discarded_second
+    count = count[m | n]
+    count.to_csv(filename, sep="\t", index=False, compression="gzip")
+
+    return df
 
 
 def main():
@@ -286,7 +386,7 @@ def main():
 
     parser.add_argument(
         "-q",
-        "--base-qual",
+        "--qual",
         help="The minimum base quality for any given mismatch (default: 20).",
         type=int,
         default=20,
@@ -439,98 +539,15 @@ def main():
 
     # use all aligned pairs to estimate conversion rates/mismatch ratios
     # this should be rewritten...
-    aligned_pairs = [a for a, b in mismatch_and_aligned_pairs]
+    aligned_pairs = unwrap_tuple_list(mismatch_and_aligned_pairs)
     mismatch_count = get_mismatch_details(
         aligned_pairs, mismatch_details_filename, mismatch_filename, offset
     )
 
-    all_mismatches = [b for a, b in mismatch_and_aligned_pairs]
-    all_mismatches = pd.concat(all_mismatches)
+    all_mismatches = unwrap_tuple_list(mismatch_and_aligned_pairs, idx=1, concat=True)
 
-    # get the conversion of interest
-    m_ref = all_mismatches["ref"] == args.ref_base
-    m_bc = all_mismatches["base"] == args.base_change
-    all_mismatches = all_mismatches[m_ref & m_bc]
-
-    # filter base quality - no offset of 33 needs to be subtracted
-    m_qual = all_mismatches["base_qual"] >= args.base_qual
-
-    # below we keep track of discarded mismatches to adjust rates
-    discarded = all_mismatches[~m_qual].copy()
-    m = discarded["read1"] & discarded["score"]
-    discarded_first = discarded[m].shape[0]
-    m = ~discarded["read1"] & discarded["score"]
-    discarded_second = discarded[m].shape[0]
-
-    all_mismatches = all_mismatches[m_qual]
-
-    # discard mismatches found at read ends
-    m_trim5p = all_mismatches["pos"] < args.trim5p
-    m_trim3p = all_mismatches["pos"] > (all_mismatches["rlen"] - args.trim3p)
-    discarded = all_mismatches[m_trim5p | m_trim3p].copy()
-    m = discarded["read1"] & discarded["score"]
-    discarded_first += discarded[m].shape[0]
-    m = ~discarded["read1"] & discarded["score"]
-    discarded_second += discarded[m].shape[0]
-
-    all_mismatches = all_mismatches[~m_trim5p & ~m_trim3p]
-
-    # remove all SNPs from what remains
-    if args.subtract:
-        # currently GRAND-SLAM snpdata default format
-        if args.vcf:
-            snps = utils.fmt_convert(args.subtract)
-        else:
-            snps = pd.read_csv(args.subtract, sep="\t")
-        snps = snps.Location.unique()
-        # add field
-        all_mismatches["Location"] = all_mismatches[["contig", "start"]].apply(
-            lambda x: ":".join([str(s) for s in x]), axis=1
-        )
-
-        discarded = all_mismatches[all_mismatches.Location.isin(snps)].copy()
-        m = discarded["read1"] & discarded["score"]
-        discarded_first += discarded[m].shape[0]
-        m = ~discarded["read1"] & discarded["score"]
-        discarded_second += discarded[m].shape[0]
-
-        all_mismatches = all_mismatches[~all_mismatches.Location.isin(snps)]
-
-    # adjust final mismatch counts
-    # if stranded, read 1 is in the same direction as RNA template, and vice versa
-    m_read1 = (mismatch_count.Genomic == args.ref_base) & (
-        mismatch_count.Read == args.base_change
-    )
-    m_read2 = (
-        mismatch_count.Genomic
-        == args.ref_base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
-    ) & (
-        mismatch_count.Read
-        == args.base_change.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
-    )
-    if args.library_type == "reverse":
-        m_read2 = (mismatch_count.Genomic == args.ref_base) & (
-            mismatch_count.Read == args.base_change
-        )
-        m_read1 = (
-            mismatch_count.Genomic
-            == args.ref_base.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
-        ) & (
-            mismatch_count.Read
-            == args.base_change.translate(str.maketrans("ACGTacgtNnXx", "TGCAtgcaNnXx"))
-        )
-
-    m = (mismatch_count.Orientation == "First") & m_read1
-    mismatch_count.loc[m, "Mismatches"] = (
-        mismatch_count.loc[m, "Mismatches"] - discarded_first
-    )
-    n = (mismatch_count.Orientation == "Second") & m_read2
-    mismatch_count.loc[n, "Mismatches"] = (
-        mismatch_count.loc[n, "Mismatches"] - discarded_second
-    )
-    mismatch_count = mismatch_count[m | n]
-    mismatch_count.to_csv(
-        mismatch_filename_final, sep="\t", index=False, compression="gzip"
+    all_mismatches = filter_mismatches(
+        all_mismatches, mismatch_count, mismatch_filename_final, args
     )
 
     # what remains are true conversions, other reads are classified as unlabelled
