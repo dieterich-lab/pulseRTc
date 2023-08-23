@@ -13,12 +13,15 @@ dependencies:
   - pip
   - setuptools
   # dependencies
-  - samtools=1.15.1
-  #- salmon=1.9 # CONFLICT installs 0.14.2!
-  - subread=2.0.1
-  - bcftools=1.15.1
+  # comment/uncomment/add as per requirements
+  - samtools=1.15.1 # required
+  - salmon=1.10.2 # transcript estimates only
+  - picard=3.0.0 # pre-processing optional
+  - subread=2.0.1 # gene estimates only
+  - bcftools=1.15.1 # SNPs estimation
+  - gffread=0.12.7 # # transcript estimates only
   # R
-  - r-base=4.2.1
+  - r-base>=4.2
   - r-devtools
   - r-tidyverse
   - r-cowplot
@@ -30,5 +33,17 @@ dependencies:
   # required for GRAND-SLAM
   #- r-reshape2
   #- r-plyr
+  # extra R packages - post-processing/qc
+  # comment/uncomment/add as per requirements
+  # as of 08.2023 installs R version 4.2.2 but some packages below
+  # were built under R version 4.2.3
+  - bioconductor-deseq2
+  - bioconductor-ihw
+  - bioconductor-glimma
+  - bioconductor-topgo
+  - bioconductor-org.hs.eg.db
+  - bioconductor-biomart
   # development
-  #- pre-commit
+  # comment/uncomment/add as per requirements
+  #- pre_commit
+  #- pytest

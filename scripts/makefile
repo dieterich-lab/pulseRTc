@@ -14,15 +14,15 @@ SRC_DGE=R/dge
 
 # sort/index bams, rename
 get-sorted-bams:
-	$(MKCMDBASH) $(SRC_UTILS)/sortnrename $(SAMPLELIST) $(BAMLOC_0) $(BAMLOC_1) $(TMPDIR) > $(LOGS)/$@.$(NOW).log 2>&1 &
+	$(MKCMDBASH) $(SRC_UTILS)/sortnrename $(SAMPLELIST) $(BAMLOC_0) $(BAMLOC) $(TMPDIR) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
 # remove duplicates, re-index
 get-dedups:
-	$(MKCMDBASH) $(SRC_UTILS)/markdups $(SAMPLELIST) $(BAMLOC_1) $(TMPDIR) > $(LOGS)/$@.$(NOW).log 2>&1 &
+	$(MKCMDBASH) $(SRC_UTILS)/markdups $(SAMPLELIST) $(BAMLOC) $(TMPDIR) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
 # 26.09.22 re-header BAM files
 get-headers:
-	$(MKCMDBASH) $(SRC_UTILS)/reheader $(BAMLOC_1) > $(LOGS)/$@.$(NOW).log 2>&1 &
+	$(MKCMDBASH) $(SRC_UTILS)/reheader $(BAMLOC) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
 
 # run GRAND-SLAM ---
@@ -33,18 +33,19 @@ get-gs-index:
 	sbatch $(SRC_GS)/getindex $(GEDI) $(INDEXLOC_GS) $(INDEXLOC) $(FASTA) $(GTF) $(INDEX_GS) > $(LOGS)/$@.$(NOW).log 2>&1 &
 # link BAM files to GRAND-SLAM results directory
 get-bam-list:
-	bash $(SRC_GS)/linkbams $(SAMPLELIST) $(BAMLOC_1) $(BAMLOC_GS) $(OUTPUT_GS) > $(LOGS)/$@.$(NOW).log 2>&1 &
+	bash $(SRC_GS)/linkbams $(SAMPLELIST) $(BAMLOC) $(BAMLOC_GS) $(OUTPUT_GS) > $(LOGS)/$@.$(NOW).log 2>&1 &
 # submit job
 run-gs:
 	sbatch $(SRC_GS)/rungs $(GEDI) $(BAMLOC_GS) $(INDEX_GS) $(OUTPUT_GS) $(NUM_CPUS) $(GSOPTS) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
 
+# *********************************************************************************************************************************
+
 # run BFCtools ---
-# optional
 
 # run BCFtools
 run-bcftools:
-	$(MKCMDBASH) $(SRC_UTILS)/callsnps $(SAMPLELIST) $(BAMLOC_1) $(BCFLOC) $(OUTPUT_BCF) $(INDEXLOC) $(FASTA) $(NUM_CPUS) > $(LOGS)/$@.$(NOW).log 2>&1 &
+	$(MKCMDBASH) $(SRC_UTILS)/callsnps $(BCFLOC) $(OUTPUT_BCF) $(INDEXLOC) $(FASTA) $(NUM_CPUS) $(YML) $(BAMLOC) $(BAMLIST) > $(LOGS)/$@.$(NOW).log 2>&1 &
 
 
 # workflow (prep BAM files) ---
@@ -129,7 +130,7 @@ ann-pulse-%:
 
 # read counting - "un-split" files for DGE
 # gene expression at varying labeling times vs. 0 (unlabelled)
-dge=$(BAMLOC_1)/*.bam
+dge=$(BAMLOC)/*.bam
 RES_DGE_PARENT=$(RESLOC_PULSER)/DESeq/tables
 RES_DGE=$(RES_DGE_PARENT)/$*$(OUTPUT_FC)
 count-%:
@@ -137,7 +138,7 @@ count-%:
 	$(MKCMDBASH) featureCounts $(FC_OPTS) -T $(NUM_CPUS) --tmpDir $(TMPDIR) -a $(INDEXLOC)/$(GTF) -o $(RES_DGE) $($*) > $(LOGS)/$@.$(NOW).log 2>&1 &
 # call DESeq on all time points
 run-dge:
-	${MKCMDR} $(SRC_DGE)/run_deseq.R $(BAMLOC_1) $(RESLOC_PULSER) $(OUTPUT_FC) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
+	${MKCMDR} $(SRC_DGE)/run_deseq.R $(BAMLOC) $(RESLOC_PULSER) $(OUTPUT_FC) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
 # GSEA
 run-cellplot:
 	${MKCMDR} $(SRC_DGE)/run_cellplot.R $(RESLOC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
