@@ -4,8 +4,8 @@ channels:
   - defaults
 dependencies:
   # python
-  - python=3.10.5
-  - pysam=0.19.1
+  - python>=3.10
+  - pysam
   - numpy
   - pandas
   - joblib
@@ -13,12 +13,15 @@ dependencies:
   - pip
   - setuptools
   # dependencies
-  - samtools=1.15.1
-  #- salmon=1.9 # CONFLICT installs 0.14.2!
-  - subread=2.0.1
-  - bcftools=1.15.1
+  # comment/uncomment/add as per requirements
+  - samtools # required
+  #- salmon>=1.10 # transcript estimates only - broken
+  - picard # pre-processing optional
+  - subread # gene estimates only
+  - bcftools # SNPs estimation
+  - gffread # # transcript estimates only
   # R
-  - r-base=4.2.1
+  - r-base>=4.2.3
   - r-devtools
   - r-tidyverse
   - r-cowplot
@@ -27,6 +30,17 @@ dependencies:
   - r-openxlsx
   - r-kernsmooth
   - r-magick
-  # required for GRAND-SLAM
-  #- r-reshape2
-  #- r-plyr
+  - r-reshape2
+  - r-plyr
+  # extra R packages - post-processing/qc
+  # comment/uncomment/add as per requirements
+  - bioconductor-deseq2
+  - bioconductor-ihw
+  - bioconductor-glimma
+  - bioconductor-topgo
+  - bioconductor-org.hs.eg.db
+  - bioconductor-biomart
+  # development
+  # comment/uncomment/add as per requirements
+  #- pre_commit
+  #- pytest

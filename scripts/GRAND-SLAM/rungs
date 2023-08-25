@@ -6,8 +6,8 @@
 #SBATCH -c 1
 #SBATCH --mem=20G
 
-# Usage: 
-#       rungs GEDI DIRLOC INDEX NAME NUMCPUS SLOPTS GSOPTS  
+# Usage:
+#       rungs GEDI DIRLOC INDEX NAME NUMCPUS SLOPTS GSOPTS
 
 # Run GRAND-SLAM
 
@@ -45,7 +45,7 @@ cat > ${JOBNAME} << EOF
 #SBATCH -N 1
 #SBATCH -c ${NUMCPUS}
 #SBATCH --mem=80G
-#SBATCH --mail-user=boileau@uni-heidelberg.de 
+#SBATCH --mail-user=boileau@uni-heidelberg.de
 #SBATCH --mail-type=FAIL,TIME_LIMIT
 #SBATCH --output=$LOG
 
@@ -53,6 +53,6 @@ cat > ${JOBNAME} << EOF
 #GRAND-SLAM calls R for plotting
 export PATH="/home/eboileau/.miniconda3/envs/pulsertc/bin:$PATH"
 
-$GEDI -e Slam -genomic $INDEX $GSOPTS -nthreads $NUMCPUS -prefix $PREFIX -reads $READS 
+$GEDI -e Slam -genomic $INDEX $GSOPTS -nthreads $NUMCPUS -prefix $PREFIX -reads $READS
 EOF
 sbatch ${JOBNAME}

@@ -1,7 +1,7 @@
 ## Adapted from https://github.com/dieterich-lab/DesignMetabolicRNAlabeling
 
 
-##' Kinetic definitions for the biochemical separation 
+##' Kinetic definitions for the biochemical separation
 ##' Pulse model
 makeFormStdPulse <- function(fractions, contaminated=FALSE) {
   formulas <- MeanFormulas(
@@ -23,7 +23,7 @@ makeFormStdPulse <- function(fractions, contaminated=FALSE) {
 }
 
 
-##' Kinetic definitions for nucleotide conversion  
+##' Kinetic definitions for nucleotide conversion
 ##' Pulse model
 ##' mu1 = background unlabelled
 ##' mu2 = background labelled
@@ -42,4 +42,3 @@ makeFormRtcPulse <- function() {
       unlabelled = "unlabelled",
       labelled = "labelled"))
 }
-

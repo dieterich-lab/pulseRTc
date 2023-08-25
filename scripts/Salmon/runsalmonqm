@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: 
+# Usage:
 # 	runsalmon SALMON LOC INDEX NUMCPUS OPTS
 
 # Run Salmon in (quasi-)maping-based mode
@@ -18,7 +18,7 @@ SALMON=$1
 LOC="$2/raw"
 # output directory - created if does not exists
 OUTPUT="$2/tables/Salmon"
-# Salmon index directory 
+# Salmon index directory
 INDEX="$3/index"
 # Salom options
 OPTS=$5
@@ -38,7 +38,7 @@ mapfile -t R2 <<< "$(ls $LOC | grep _R2.fastq.gz | sort)"
 # call salmon
 # echo "Calling: salmon quant -i $INDEX -p $NUMCPUS ${OPTS} -1 <(gunzip -c ${R1[@]}) -2 <(gunzip -c ${R2[@]}) -o ${OUTPUT} ..."
 # $SALMON quant -i $INDEX -p $NUMCPUS ${OPTS} -1 <(gunzip -c ${R1[@]}) -2 <(gunzip -c ${R2[@]}) -o ${OUTPUT}
-for i in "${!R1[@]}"; do 
+for i in "${!R1[@]}"; do
   output=$(echo ${R1[$i]} | cut -d'.' -f1-2)
   output="${output%_*}"
   printf "CALLING:%s\t%s\t%s\t%s\n" "$i" "${R1[$i]} ${R2[$i]} ${output}"

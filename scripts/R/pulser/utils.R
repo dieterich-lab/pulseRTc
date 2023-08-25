@@ -20,7 +20,7 @@ getPulseData <- function(rdsDir, refLevel=NULL) {
   cts <- cts[conditions$sample]
   conditions <- conditions[c("fraction", "time", "sample", "rep")]
   conditions$fraction <- factor(conditions$fraction)
-  if (!is.null(refLevel)) { 
+  if (!is.null(refLevel)) {
     conditions$fraction <-
         relevel(conditions$fraction, refLevel)
   }
@@ -124,12 +124,10 @@ sumup <- function(fit, cis, pd = NULL) {
 }
 
 
-##' Various helper functions 
+##' Various helper functions
 
 extractTimesFromNames <- function(files) {
   timeSets <- stringr::str_match_all(files, "-([0-9\\.].+)\\.rds") %>%
     purrr::map(2)
   timeSets
 }
-
-

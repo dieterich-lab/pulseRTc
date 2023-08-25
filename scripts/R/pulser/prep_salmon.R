@@ -29,9 +29,9 @@ colClasses <- c("character", "NULL", "NULL", "NULL", "numeric")
 
 getData <- function(data, dataDir, dataFiles, outDir){
     squants <- map(dataFiles, function(.id) {
-        df <- read.table(file.path(dataDir, .id, "quant.sf", fsep=.Platform$file.sep), 
-                         header = T, 
-                         row.names = 1, 
+        df <- read.table(file.path(dataDir, .id, "quant.sf", fsep=.Platform$file.sep),
+                         header = T,
+                         row.names = 1,
                          colClasses = colClasses)
         colnames(df) <- .id
         df

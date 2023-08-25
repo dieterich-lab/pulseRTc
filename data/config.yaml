@@ -1,48 +1,50 @@
-# configuration file 
+# configuration file
 
 # BAM files - ready for input
-# full path is constructed as bamloc/samples[key] at runtime, e.g. 
+# full path is constructed as bamloc/samples[key] at runtime, e.g.
 # /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping/161634_WTA_0h.sortdedup.bam
 # bamloc directory must exists
 bamloc: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/mapping
 samples:
- 161634_WTA_0h: 161634_WTA_0h.sortdedup.bam
- 161637_WTA_1h: 161637_WTA_1h.sortdedup.bam
- 161639_WTA_2h: 161639_WTA_2h.sortdedup.bam
- 161641_WTA_4h: 161641_WTA_4h.sortdedup.bam
- 161643_WTA_6h: 161643_WTA_6h.sortdedup.bam
- 161645_WTA_8h: 161645_WTA_8h.sortdedup.bam
- 161647_WTA_16h: 161647_WTA_16h.sortdedup.bam
- 161649_WTB_0h: 161649_WTB_0h.sortdedup.bam
- 161651_WTB_1h: 161651_WTB_1h.sortdedup.bam
- 161653_WTB_2h: 161653_WTB_2h.sortdedup.bam
- 161655_WTB_4h: 161655_WTB_4h.sortdedup.bam
- 161657_WTB_6h: 161657_WTB_6h.sortdedup.bam
- 161659_WTB_8h: 161659_WTB_8h.sortdedup.bam
- 161661_WTB_16h: 161661_WTB_16h.sortdedup.bam
- 161663_WTC_0h: 161663_WTC_0h.sortdedup.bam
- 161665_WTC_1h: 161665_WTC_1h.sortdedup.bam
- 161667_WTC_2h: 161667_WTC_2h.sortdedup.bam
- 161669_WTC_4h: 161669_WTC_4h.sortdedup.bam
- 161671_WTC_6h: 161671_WTC_6h.sortdedup.bam
- 161673_WTC_8h: 161673_WTC_8h.sortdedup.bam
- 161675_WTC_16h: 161675_WTC_16h.sortdedup.bam
+  161634_WTA_0h: 161634_WTA_0h.sortdedup.bam
+  161637_WTA_1h: 161637_WTA_1h.sortdedup.bam
+  161639_WTA_2h: 161639_WTA_2h.sortdedup.bam
+  161641_WTA_4h: 161641_WTA_4h.sortdedup.bam
+  161643_WTA_6h: 161643_WTA_6h.sortdedup.bam
+  161645_WTA_8h: 161645_WTA_8h.sortdedup.bam
+  161647_WTA_16h: 161647_WTA_16h.sortdedup.bam
+  161649_WTB_0h: 161649_WTB_0h.sortdedup.bam
+  161651_WTB_1h: 161651_WTB_1h.sortdedup.bam
+  161653_WTB_2h: 161653_WTB_2h.sortdedup.bam
+  161655_WTB_4h: 161655_WTB_4h.sortdedup.bam
+  161657_WTB_6h: 161657_WTB_6h.sortdedup.bam
+  161659_WTB_8h: 161659_WTB_8h.sortdedup.bam
+  161661_WTB_16h: 161661_WTB_16h.sortdedup.bam
+  161663_WTC_0h: 161663_WTC_0h.sortdedup.bam
+  161665_WTC_1h: 161665_WTC_1h.sortdedup.bam
+  161667_WTC_2h: 161667_WTC_2h.sortdedup.bam
+  161669_WTC_4h: 161669_WTC_4h.sortdedup.bam
+  161671_WTC_6h: 161671_WTC_6h.sortdedup.bam
+  161673_WTC_8h: 161673_WTC_8h.sortdedup.bam
+  161675_WTC_16h: 161675_WTC_16h.sortdedup.bam
 
 # parent output directory - created if does not exists
 # subdirectories "mapping" ("raw"), "mismatches", and "tables" (featureCounts and/or Salmon) are created
 parent: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/workflow
 
 # SNPs file - ideally this file contains SNPs found on the set of all samples listed above
-# we currently use the snpdata from GRAND-SLAM (default format - Location\tCoverage\tMismatches\tP value)
-# comment out to run the pipeline without removing SNPs
-# if using BCFtools, don't forget to use the [--vcf] option (set vfc to True)!
-snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/grand-slam/results/all/all.snpdata
+# NOT RECOMMENDED: comment out to run the pipeline without removing SNPs
+# Default BCFtools: [--vcf] option (set vfc to True)
+# we previously used the snpdata from GRAND-SLAM (default format - Location\tCoverage\tMismatches\tP value)
+# If using GRAND-SLAM snpdata, see vcf: False
+# snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/grand-slam/results/all/all.snpdata
+snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/bcftools/all.snps.vcf
 
 # program options - if unspecified uses default in splbam
 base_qual: 20 # default 20
 trim5p: 5 # default 0
 trim3p: 5 # default 0
-vcf: False # default False
+vcf: True # default False (for backward compatibility)
 ref_base: T # default T
 base_change: C # default C
 

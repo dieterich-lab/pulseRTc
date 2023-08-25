@@ -22,17 +22,17 @@ library(gridExtra)
 ## input/params
 
 # pulseR, GS c('#3182BD', '#31A354')
-pal <- c(rev(scales::brewer_pal(pal="Blues")(6))[2],  
+pal <- c(rev(scales::brewer_pal(pal="Blues")(6))[2],
          rev(scales::brewer_pal(pal="Greens")(6))[2])
-         
+
 
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args)<2) { stop("./plot_corrm.R [RESLOC_PULSER] [SRC]\n", call.=FALSE) }
 
 src <- args[2]
-source(file.path(src, "utils.R", fsep=.Platform$file.sep)) 
+source(file.path(src, "utils.R", fsep=.Platform$file.sep))
 
-# pulseR/GRAND-SLAM combined results 
+# pulseR/GRAND-SLAM combined results
 pulseDir <- file.path(args[1], "featureCounts", fsep=.Platform$file.sep)
 pulseFit <- "pulsefit"
 pulseCis <- "pulsecis"
@@ -45,30 +45,30 @@ if (!dir.exists(figDir)) {dir.create(figDir, recursive=TRUE)}
 
 ## plotting
 
-shadesOfGrey <- colorRampPalette(c("white", "grey100", "grey90", "grey80", "grey70", "grey60", 
+shadesOfGrey <- colorRampPalette(c("white", "grey100", "grey90", "grey80", "grey70", "grey60",
                                    "grey50", "grey40", "grey30", "grey20", "grey10", "grey0"))
-                                   
-                                   
+
+
 myHeatmap <- function(cormat, labels, llim=0.6) {
     # melt fo plotting...
 	melted_cormat <- reshape2::melt(cormat, na.rm = TRUE)
-	# manually set column order 
+	# manually set column order
     col_order <- rev(levels(melted_cormat$Var2))
     melted_cormat$Var1 <- factor(melted_cormat$Var1, levels = col_order)
     melted_cormat$Var2 <- factor(melted_cormat$Var2, levels = col_order)
 	# and create a ggheatmap
 	ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value)) +
         geom_tile(color = "white") +
-        scale_fill_gradient(low = "#ece7f2", high = "#3182BD", limit = c(llim,1), space = "Lab", 
+        scale_fill_gradient(low = "#ece7f2", high = "#3182BD", limit = c(llim,1), space = "Lab",
             name="Pearson\nCorrelation",na.value='white',guide=F) +
-        theme_minimal() + 
+        theme_minimal() +
         theme(text=element_text(size=12),
               axis.text.y = element_text(size=12),
               axis.text.x = element_text(angle = 90, vjust = 0.5, size = 12, hjust = 1)) +
 		scale_x_discrete(labels=labels) + scale_y_discrete(labels=labels) +
         coord_fixed()
 	# add text (corr values)
-	ggheatmap + 
+	ggheatmap +
         geom_text(aes(Var2, Var1, label = value), color = "black", size = 2) +
         theme(axis.title.x = element_blank(),
               axis.title.y = element_blank(),
@@ -76,12 +76,12 @@ myHeatmap <- function(cormat, labels, llim=0.6) {
               panel.border = element_blank(),
               panel.background = element_blank(),
 	          axis.ticks = element_blank())
-}                                   
-                                   
-                                   
+}
+
+
 myLine <- function(x, y, ...){
     par(new = TRUE)
-    smoothScatter(x, y, 
+    smoothScatter(x, y,
                   colramp = shadesOfGrey,
                   xaxt='n', yaxt = 'n',
                   ...)
@@ -152,7 +152,7 @@ function (x, labels, panel = points, ...,
 
 		text(x, y, txt, cex = cex, font = font)
 
- 
+
 
     localAxis <- function(side, x, y, xpd, bg, col=NULL, main, oma, ...) {
 
@@ -174,7 +174,7 @@ function (x, labels, panel = points, ...,
 
     }
 
- 
+
 
     localPlot <- function(..., main, oma, font.main, cex.main) plot(...)
 
@@ -186,13 +186,13 @@ function (x, labels, panel = points, ...,
 
         upper.panel(...)
 
- 
+
 
     localDiagPanel <- function(..., main, oma, font.main, cex.main)
 
         diag.panel(...)
 
- 
+
 
     dots <- list(...); nmdots <- names(dots)
 
@@ -228,7 +228,7 @@ function (x, labels, panel = points, ...,
 
         diag.panel <- match.fun( diag.panel)
 
- 
+
 
     if(row1attop) {
 
@@ -238,7 +238,7 @@ function (x, labels, panel = points, ...,
 
     }
 
- 
+
 
     nc <- ncol(x)
 
@@ -282,7 +282,7 @@ function (x, labels, panel = points, ...,
 
     dev.hold(); on.exit(dev.flush(), add = TRUE)
 
- 
+
 
     xl <- yl <- logical(nc)
 
@@ -448,12 +448,12 @@ names(supp_heatmaps) <- names(res)
 map2(res, names(res), function(x, y) {
     filen <- file.path(figDir, paste("pair-", y, ".pdf", sep=""), fsep=.Platform$file.sep)
     pdf(filen, width=16, height=16)
-    myPairs(x, 
-        lower.panel = lower.panel, 
+    myPairs(x,
+        lower.panel = lower.panel,
         upper.panel = myLine,
         cex.labels = 4, cex.axis = 2.5,
         main = "")
-    dev.off()    
+    dev.off()
 })
 
 map2(supp_heatmaps, names(supp_heatmaps), function(x, y) {

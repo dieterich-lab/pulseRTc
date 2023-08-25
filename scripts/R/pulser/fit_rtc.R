@@ -12,7 +12,7 @@ library(tibble)
 library(dplyr)
 
 ## Adapted from https://github.com/dieterich-lab/DesignMetabolicRNAlabeling
-## Fit the kinetic model to the read counts for reverse transcription nucleotide 
+## Fit the kinetic model to the read counts for reverse transcription nucleotide
 ## conversion data: SLAM, TUC, TLS.
 ## pulseR_1.0.3
 
@@ -26,13 +26,13 @@ if (length(args)<2) { stop("./fit_rtc.R [SRC] [LOC] <0/1>\n", call.=FALSE) }
 
 src <- args[1]
 source(file.path(src, "time_pts.R", fsep=.Platform$file.sep))
-source(file.path(src, "utils.R", fsep=.Platform$file.sep)) 
+source(file.path(src, "utils.R", fsep=.Platform$file.sep))
 source(file.path(src, "models.R", fsep=.Platform$file.sep))
 
 use_fit <- FALSE
 usedSets <- allSets
 modelStr <- "pulse"
-if (length(args)>2 & as.integer(args[3])==1) { 
+if (length(args)>2 & as.integer(args[3])==1) {
     print("Using subsets of time points defined in time_pts.R")
     usedSets <- timeSets
     use_fit <- TRUE
@@ -78,8 +78,8 @@ boundaries <- list(mu1  = c(log(1e-2*20), log(1e6*20)), # substituted variable
                    mu3  = c(log(1e-2), log(1e6)),
                    d    = c(1e-3, 2),
                    size = c(1, 1e3))
-                   
-## set initial values here 
+
+## set initial values here
 
 init <- function(counts) {
   fit <- list(
@@ -121,7 +121,7 @@ fitTimePoints <- function(counts, conditions, model, init, norms, boundaries, to
   res <- getFit(tpcounts, tpconditions, model, init, norms, boundaries, tolerance)
   saveRDS(
     res,
-    sprintf(file.path(rdsDir, paste(modelStr, "fit-%s.rds", sep="")), 
+    sprintf(file.path(rdsDir, paste(modelStr, "fit-%s.rds", sep="")),
         paste(tp, collapse ="-")))
   res
 }
@@ -131,12 +131,12 @@ fitTimePoints <- function(counts, conditions, model, init, norms, boundaries, to
 res <- map(
   usedSets,
   fitTimePoints,
-  counts=counts, 
-  conditions=conditions, 
-  model=model, 
+  counts=counts,
+  conditions=conditions,
+  model=model,
   init=init,
-  norms=norms, 
-  boundaries=boundaries, 
+  norms=norms,
+  boundaries=boundaries,
   tolerance=tolerance)
 
 ## compute confidence intervals for d
@@ -155,4 +155,3 @@ cisr <- map(
         paste(tp, collapse ="-")))
     cis
   })
-  

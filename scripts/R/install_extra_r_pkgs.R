@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Install required packages (pulseR) and additional
-# packages for DGE, GSEA, etc. 
+# Install required packages (pulseR) and possibly additional packages
 
 args = commandArgs(trailingOnly = TRUE)
 
@@ -14,8 +13,7 @@ devtools::install_github("dieterich-lab/pulseR", subdir = "pkg")
 if (length(args)>0 & args[1]=="all") {
     cran_pkgs <- c() # add any extra packages here
     cran_pkgs <- cran_pkgs[!cran_pkgs %in% installed.packages()[,1]]
-    # DESeq2 fails to install in the newly created conda environment...
-    # we temporarily rely on locally installed packages ()
+    # otherwise rely on locally installed packages ()
     bioc_pkgs <- c(
         #"DESeq2",
         #"IHW",
@@ -35,6 +33,6 @@ if (length(args)>0 & args[1]=="all") {
 
 if (length(cran_pkgs) > 0)
     install.packages(cran_pkgs)
-    
+
 if (length(bioc_pkgs) > 0)
     BiocManager::install(bioc_pkgs)

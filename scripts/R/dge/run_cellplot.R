@@ -1,8 +1,8 @@
 #! /usr/bin/env Rscript
 
-# GSEA using output from "run_deseq.R" 
+# GSEA using output from "run_deseq.R"
 
-# Usage: ./run_cellplot.R [RESLOC] 
+# Usage: ./run_cellplot.R [RESLOC]
 # 1: [RESLOC] Results directory
 
 # WARNING Hard coded: update path for missing libraries...
@@ -35,7 +35,7 @@ go.class <- "weight01Count"
 nodesize <- 10
 topNodes <- 250
 
-pvalCutOff <- 0.05 # everywhere 
+pvalCutOff <- 0.05 # everywhere
 
 # ---------------------------------------------------------
 
@@ -45,9 +45,9 @@ outDir <- file.path(args[1], "DESeq", "results", fsep=.Platform$file.sep)
 contrasts <- list.files(outDir, pattern = "*.xlsx")
 
 call_cellplot <- function(contrast) {
-    
+
     print(paste("Processing ", file.path(outDir, contrast), " ...", sep=""))
-    
+
     dge <- read.xlsx(file.path(outDir, contrast),
                      sheet=2, # use shrunken logFC
                      rowNames=TRUE)
@@ -59,16 +59,16 @@ call_cellplot <- function(contrast) {
     relevant.genes <- factor(as.integer(selection[universe]))
     names(relevant.genes) <- background
 
-    topGO.data <- new("topGOdata", 
-                      ontology='BP', 
-                      allGenes=relevant.genes, 
-                      mapping=mapping, 
-                      annotationFun=annFUN.org, 
+    topGO.data <- new("topGOdata",
+                      ontology='BP',
+                      allGenes=relevant.genes,
+                      mapping=mapping,
+                      annotationFun=annFUN.org,
                       nodeSize=nodesize,
                       ID=ID)
     # test statistic
-    test.stat <- new(go.class, 
-                     testStatistic=GOFisherTest, 
+    test.stat <- new(go.class,
+                     testStatistic=GOFisherTest,
                      name="Fisher")
     # run Fisher test
     sig.groups <- getSigGroups(topGO.data, test.stat)
@@ -98,31 +98,31 @@ call_cellplot <- function(contrast) {
     fisher.results <- data.frame(fisher.results, ei, stringsAsFactors = FALSE, check.names = FALSE)
 
     x <- head(fisher.results, 10)
-    
+
     h <- vapply(strsplit(contrast, "_", fixed=T), "[", "", 2)
     main <- paste("GO enrichment ", h, " h vs. 0h labeling", sep="")
-    
+
     filen <- paste(gsub('.xlsx', '', contrast, fixed = T), "_cellplot.pdf", sep = "")
     pdf(file.path(outDir, filen), width=12, height=8)
-    cell.plot(x=setNames(x$LogEnrich, x$Term), 
-              cells=x$log2FoldChange, 
-              main=main, 
-              x.mar=c(.5, 0), 
-              key.n=7, 
-              y.mar=c(.1, 0), 
-              cex=1.6, 
-              cell.outer=2, 
-              bar.scale=.7, 
+    cell.plot(x=setNames(x$LogEnrich, x$Term),
+              cells=x$log2FoldChange,
+              main=main,
+              x.mar=c(.5, 0),
+              key.n=7,
+              y.mar=c(.1, 0),
+              cex=1.6,
+              cell.outer=2,
+              bar.scale=.7,
               space=.2)
-    sym.plot(x=setNames(x$LogEnrich, x$Term), 
-             cells=x$log2FoldChange, 
-             x.annotated = x$Annotated, 
+    sym.plot(x=setNames(x$LogEnrich, x$Term),
+             cells=x$log2FoldChange,
+             x.annotated = x$Annotated,
              main=main,
-             x.mar=c(.45, 0), 
-             key.n=7, 
-             cex=1.6, 
-             axis.cex=.8, 
-             group.cex=.7) 
+             x.mar=c(.45, 0),
+             key.n=7,
+             cex=1.6,
+             axis.cex=.8,
+             group.cex=.7)
     dev.off()
 }
 
