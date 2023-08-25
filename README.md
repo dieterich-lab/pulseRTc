@@ -5,10 +5,7 @@ Starting from alignments (BAM files), **pulseRTc** can be used to infer genome-w
 We use [pulseR](https://dieterich-lab.github.io/pulseR/index.html), a kinetic and statistical modelling framework, to estimate RNA decay rates (half-lives).
 
 > **Warning**\
-> Kinetic models for biochemical separation (with or without spike-ins) and nucleotide conversion protocols are pre-defined for a _pulse labeling experiment_. These models can be modified to reflect differences in experimental procedures ( _e.g._ chase experiment), but this requires a bit of R scripting, see [models](scripts/R/pulser/models.R). Currently, the pre-processing workflow for nucleotide conversion protocols splits input alignment (BAM) files into "labeled" (reads with T -> C) and "unlabeled" (old/pre-existing reads without T -> C), according to the presence or not of characteristic mismatches ( after quality filtering, SNPs removal, _etc._ ).
-
-> **Note**\
->  [GRAND-SLAM](https://github.com/erhard-lab/gedi/wiki/GRAND-SLAM) can be used as another method to estimate old and new RNAs (for RT _e.g._ SLAM-seq or direct conversion _e.g._ TUC- or TimeLapse-seq). It was used by default for SNP calling, and kept for backward compatibility, but **BCFtools** can also be used. As **GRAND-SLAM** is currently only available under license agreement, if you want to use it, you need to install it yourself! We do not know which version is currently available, but according to the latest documention **Java 1.8** is still a requirement. If you use **BCFtools** instead (now recommended), it is installed by default in the environment.
+> Kinetic models for biochemical separation (with or without spike-ins) and nucleotide conversion protocols are pre-defined for a _pulse labeling experiment_. These models can be modified to reflect differences in experimental procedures ( _e.g._ chase experiment), but this requires a bit of R scripting, see [models](scripts/R/pulser/models.R). Currently, the pre-processing workflow for nucleotide conversion protocols splits input alignment (BAM) files into "labelled" (reads with T -> C) and "unlabelled" (old/pre-existing reads without T -> C), according to the presence or not of characteristic mismatches ( after quality filtering, SNPs removal, _etc._ ).
 
 # Getting started
 
@@ -28,10 +25,10 @@ conda activate pulsertc
 ```
 
 > **Note**\
-> Dependencies include [Subread](http://subread.sourceforge.net/) (featureCounts) for gene abundance quantification, [Salmon](https://salmon.readthedocs.io/en/latest/) and [gffread](http://ccb.jhu.edu/software/stringtie/gff.shtml#gffread) for transcript abundance quantification, [Picard Tools](https://broadinstitute.github.io/picard/), [Samtools](http://www.htslib.org/), and [BCFtools](http://samtools.github.io/bcftools/howtos/index.html). **Picard Tools** is optional. If you have existing installations of both **Salmon** and **GffRead**, you can specify paths to binaries in [makefile.vars](scripts/makefile.vars), and comment out the corresponding lines in the [environment.yml](environment.yaml) file, before creating the environment.
+> General dependencies include [Samtools](http://www.htslib.org/), [BCFtools](http://samtools.github.io/bcftools/howtos/index.html), and [Picard Tools](https://broadinstitute.github.io/picard/). **Picard Tools** is optional. For gene abundance quantification, [Subread](http://subread.sourceforge.net/) (featureCounts) is also installed. See below for transcript abundance quantification. Comment out corresponding lines in [environment.yml](environment.yaml), before creating the environment, to skip installation of selected dependencies.
 
-> **Note**\
-> Extra R packages are optional, and include standard packages for post-processing, DGE, _etc_. If you already have a system-wide (or managed via environment modules) R installation with extra packages, the search path can be updated for an interactive session (or added to scripts) using _e.g._ `.libPaths( c( .libPaths(), "/beegfs/homes/eboileau/R/x86_64-pc-linux-gnu-library/4.2", "/beegfs/biosw/R/4.2.1_deb11/lib/R/library") )` or `R_LIBS_USER` can be modified using _Renviron_ in the source directory of the environment. You can then comment out the corresponding lines in the [environment.yml](environment.yaml) file, before creating the environment.
+> **Warning**\
+> For transcript abundance quantification, [GffRead](http://ccb.jhu.edu/software/stringtie/gff.shtml#gffread) and [Salmon](https://salmon.readthedocs.io/en/latest/) are required, however **Salmon** is currently NOT installable via `conda`, see [here](https://github.com/dieterich-lab/pulseRTc/issues/2). If you have existing installations, you can specify paths to binaries for both **Salmon** and **GffRead** in [makefile.vars](scripts/makefile.vars).
 
 Install additional R packages
 
@@ -40,7 +37,7 @@ Install additional R packages
 Rscript scripts/R/install_extra_r_pkgs.R
 ```
 
-Install the package. To install the local VCS project in development mode, use the `--editable` or `-e` option, otherwise
+Install **pulseRTc**. To install the local VCS project in development mode, use the `--editable` or `-e` option, otherwise
 this flag can be ignored
 
 ```
@@ -69,7 +66,7 @@ If your BAM files are ready to be processed, then you want to get SNPs. We recom
 
 ### Run splbam (split BAM files into "old" and "new")
 
-Once this is done, you need to update the `snpdata` key in the [config.yaml](data/config.yaml) with the output of **BCFtools** (or **GRAND-SLAM** ), and set `vcf: True` if using the **BCFtools** output. You need to set `parent` and any program options, and `make run-workflow`. After completion, you can get some summary statistics using `make plot-mm`.
+Once this is done, you need to update the `snpdata` key in the [config.yaml](data/config.yaml) with the output of **BCFtools** (or **GRAND-SLAM**), and set `vcf: True` if using the **BCFtools** output. You need to set `parent` and any program options, and `make run-workflow`. After completion, you can get some summary statistics using `make plot-mm`.
 
 ### Abundance estimation - gene
 

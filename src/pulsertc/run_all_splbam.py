@@ -150,16 +150,18 @@ def main():
             f"for each strand from {args.gtf}.\n"
         )
 
-        library_type = utils.infer_library_type(
+        args.library_type = utils.infer_library_type(
             bamf, args.gtf, sample_size=args.sample_size
         )
-        if library_type is None:
+        if args.library_type is None:
             return
 
     if args.insert_size is None:
         bamf = Path(config["bamloc"], list(config["samples"].values())[0]).as_posix()
         exist = utils.check_files_exist([bamf], raise_on_error=True, logger=logger)
-        insert_size = utils.infer_read_length(bamf, sample_size=args.sample_size) * 2
+        args.insert_size = (
+            utils.infer_read_length(bamf, sample_size=args.sample_size) * 2
+        )
 
     for name, bam in config["samples"].items():
 
@@ -167,7 +169,7 @@ def main():
         cmd = (
             f"splbam {bam_path} {Path(config['parent'], 'mapping').as_posix()} "
             f"{Path(config['parent'], 'mismatches').as_posix()} {name} "
-            f"--library-type {library_type} --insert-size {insert_size} "
+            f"--library-type {args.library_type} --insert-size {args.insert_size} "
             f"{all_opt_str} {snpdata_str} --num-cpus {args.num_cpus} {mem_str} "
             f"{logging_str} {overwrite_str} {do_not_call_str}"
         )

@@ -4,8 +4,8 @@ channels:
   - defaults
 dependencies:
   # python
-  - python=3.10.5
-  - pysam=0.19.1
+  - python>=3.10
+  - pysam
   - numpy
   - pandas
   - joblib
@@ -14,14 +14,14 @@ dependencies:
   - setuptools
   # dependencies
   # comment/uncomment/add as per requirements
-  - samtools=1.15.1 # required
-  - salmon=1.10.2 # transcript estimates only
-  - picard=3.0.0 # pre-processing optional
-  - subread=2.0.1 # gene estimates only
-  - bcftools=1.15.1 # SNPs estimation
-  - gffread=0.12.7 # # transcript estimates only
+  - samtools # required
+  #- salmon>=1.10 # transcript estimates only - broken
+  - picard # pre-processing optional
+  - subread # gene estimates only
+  - bcftools # SNPs estimation
+  - gffread # # transcript estimates only
   # R
-  - r-base>=4.2
+  - r-base>=4.2.3
   - r-devtools
   - r-tidyverse
   - r-cowplot
@@ -30,13 +30,10 @@ dependencies:
   - r-openxlsx
   - r-kernsmooth
   - r-magick
-  # required for GRAND-SLAM
-  #- r-reshape2
-  #- r-plyr
+  - r-reshape2
+  - r-plyr
   # extra R packages - post-processing/qc
   # comment/uncomment/add as per requirements
-  # as of 08.2023 installs R version 4.2.2 but some packages below
-  # were built under R version 4.2.3
   - bioconductor-deseq2
   - bioconductor-ihw
   - bioconductor-glimma

@@ -33,16 +33,18 @@ samples:
 parent: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/workflow
 
 # SNPs file - ideally this file contains SNPs found on the set of all samples listed above
-# we currently use the snpdata from GRAND-SLAM (default format - Location\tCoverage\tMismatches\tP value)
-# comment out to run the pipeline without removing SNPs
-# if using BCFtools, don't forget to use the [--vcf] option (set vfc to True)!
-snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/grand-slam/results/all/all.snpdata
+# NOT RECOMMENDED: comment out to run the pipeline without removing SNPs
+# Default BCFtools: [--vcf] option (set vfc to True)
+# we previously used the snpdata from GRAND-SLAM (default format - Location\tCoverage\tMismatches\tP value)
+# If using GRAND-SLAM snpdata, see vcf: False
+# snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/grand-slam/results/all/all.snpdata
+snpdata: /prj/hIPSC_RNA_turnover_Naarmann/analysis/Krijgsveld_collaboration/bcftools/all.snps.vcf
 
 # program options - if unspecified uses default in splbam
 base_qual: 20 # default 20
 trim5p: 5 # default 0
 trim3p: 5 # default 0
-vcf: False # default False
+vcf: True # default False (for backward compatibility)
 ref_base: T # default T
 base_change: C # default C
 
