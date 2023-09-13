@@ -107,9 +107,11 @@ pulse-set-%:
 	${MKCMDRLONG} $(SRC_PULSER)/fit_rtc.R $(SRC_PULSER) $($*) 1 > $(LOGS)/$@.$(NOW).out 2>&1 &
 
 
+# *********************************************************************************************************************************
+
+
 # downstream analyses ---
-# WARNING: Some scripts have hard coded options, e.g. annotation org.Hs.eg.db, etc. or
-#	   are only relevant if GRAND-SLAM results are available
+# optional
 
 # get all estimates into tables and match pulseR and GRAND-SLAM results
 # ONLY for gene quantification, i.e. featureCounts AND GRAND-SLAM results
@@ -121,19 +123,12 @@ match-gs:
 plot-match:
 	${MKCMDR} $(SRC_ANALYSIS)/plot_corrm.R $(RESLOC_PULSER) $(SRC_PULSER) > $(LOGS)/$@.$(NOW).out 2>&1 &
 
-# annotate pulseR results into a new table using biomaRt
-# gene (featureCounts) trx (Salmon)
-gene=0
-trx=1
-ann-pulse-%:
-	${MKCMDR} $(SRC_ANALYSIS)/annotate_pulser.R $(RESLOC_PULSER) $(SRC_PULSER) $($*) > $(LOGS)/$@.$(NOW).out 2>&1 &
-
 # read counting - "un-split" files for DGE
 # gene expression at varying labeling times vs. 0 (unlabelled)
 dge=$(BAMLOC)/*.bam
 RES_DGE_PARENT=$(RESLOC_PULSER)/DESeq/tables
 RES_DGE=$(RES_DGE_PARENT)/$*$(OUTPUT_FC)
-count-%:
+qc-count-%:
 	[ -d $(RES_DGE_PARENT) ] || mkdir -p $(RES_DGE_PARENT)
 	$(MKCMDBASH) featureCounts $(FC_OPTS) -T $(NUM_CPUS) --tmpDir $(TMPDIR) -a $(INDEXLOC)/$(GTF) -o $(RES_DGE) $($*) > $(LOGS)/$@.$(NOW).log 2>&1 &
 # call DESeq on all time points
